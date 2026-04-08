@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คำนวณราคาเฉลี่ยหุ้น</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#f5f1eb;
+  --paper:#faf8f4;
+  --ink:#1a1612;
+  --ink2:#4a433b;
+  --ink3:#8c7d6e;
+  --rule:#ddd6cc;
+  --rule2:#c8bfb3;
+  --buy:#1a6b3a;
+  --buy-bg:#edf7f1;
+  --buy-border:#a8d8bc;
+  --sell:#8b2020;
+  --sell-bg:#fdf0f0;
+  --sell-border:#f0b8b8;
+  --accent:#c4440a;
+  --accent-light:#fdf3ee;
+  --mono:'DM Mono',monospace;
+  --sans:'Sarabun',sans-serif;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
+}
+
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  min-height:100vh;
+  padding:2.5rem 1rem 5rem;
+  background-image:
+    repeating-linear-gradient(0deg,transparent,transparent 27px,var(--rule) 27px,var(--rule) 28px);
+}
+
+.wrap{max-width:700px;margin:0 auto;}
+
+/* Header */
+.hdr{
+  background:var(--paper);
+  border:1px solid var(--rule2);
+  border-radius:3px 3px 0 0;
+  padding:1.75rem 2rem 1.5rem;
+  box-shadow:var(--shadow);
+  border-bottom:3px double var(--rule2);
+  position:relative;
+}
+.hdr::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(
+    90deg,
+    transparent 0,transparent 40px,
+    rgba(196,68,10,0.06) 40px,rgba(196,68,10,0.06) 41px
+  );
+  pointer-events:none;border-radius:inherit;
+}
+.hdr-label{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.18em;
+  color:var(--ink3);
+  text-transform:uppercase;
+  margin-bottom:0.4rem;
+}
+.hdr h1{
+  font-family:var(--mono);
+  font-size:clamp(1.4rem,4vw,2rem);
+  font-weight:500;
+  color:var(--ink);
+  line-height:1.15;
+  letter-spacing:-0.01em;
+}
+.hdr h1 em{color:var(--accent);font-style:normal;}
+.hdr-sub{
+  font-size:13px;
+  color:var(--ink3);
+  margin-top:0.4rem;
+  font-weight:300;
+}
+
+/* Section */
+.section{
+  background:var(--paper);
+  border:1px solid var(--rule2);
+  border-top:none;
+  padding:1.5rem 2rem;
+  box-shadow:var(--shadow);
+}
+.section:last-of-type{border-radius:0 0 3px 3px;}
+
+.sec-label{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.14em;
+  color:var(--ink3);
+  text-transform:uppercase;
+  margin-bottom:1.1rem;
+  display:flex;align-items:center;gap:8px;
+}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--rule);}
+
+/* Current portfolio */
+.port-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1rem;
+  margin-bottom:0.25rem;
+}
+@media(max-width:480px){.port-grid{grid-template-columns:1fr;}}
+
+.field{display:flex;flex-direction:column;gap:0.35rem;}
+.field label{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.1em;
+  color:var(--ink3);
+  text-transform:uppercase;
+}
+.field input,.field select{
+  background:var(--bg);
+  border:1px solid var(--rule2);
+  border-radius:3px;
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:1.05rem;
+  font-weight:400;
+  padding:0.55rem 0.8rem;
+  width:100%;
+  outline:none;
+  transition:border-color 0.2s,background 0.2s;
+  -moz-appearance:textfield;appearance:textfield;
+}
+.field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.field input:focus,.field select:focus{
+  border-color:var(--accent);
+  background:var(--paper);
+  outline:none;
+}
+
+/* Current value display */
+.current-val{
+  margin-top:1rem;
+  padding:0.9rem 1rem;
+  background:var(--accent-light);
+  border:1px solid #e8c4ae;
+  border-radius:3px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:0.5rem;
+}
+.cv-label{font-size:12px;color:var(--accent);font-family:var(--mono);font-weight:400;letter-spacing:0.05em;}
+.cv-value{font-family:var(--mono);font-size:1.1rem;font-weight:500;color:var(--accent);}
+
+/* Mode toggle */
+.mode-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+  border:1px solid var(--rule2);
+  border-radius:3px;
+  overflow:hidden;
+  margin-bottom:1.25rem;
+}
+.mode-btn{
+  padding:0.65rem;
+  text-align:center;
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:0.08em;
+  border:none;
+  background:var(--bg);
+  color:var(--ink3);
+  transition:all 0.18s;
+  border-right:1px solid var(--rule2);
+  font-weight:400;
+}
+.mode-btn:last-child{border-right:none;}
+.mode-btn.active-buy{background:var(--buy-bg);color:var(--buy);font-weight:500;border-color:var(--buy-border);}
+.mode-btn.active-sell{background:var(--sell-bg);color:var(--sell);font-weight:500;border-color:var(--sell-border);}
+.mode-btn:hover:not(.active-buy):not(.active-sell){background:var(--paper);}
+
+/* Transaction list */
+.tx-list{display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem;}
+.tx-item{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:0.75rem;
+  align-items:end;
+  padding:0.75rem;
+  border-radius:3px;
+  border:1px solid;
+  position:relative;
+  animation:slideIn 0.2s ease;
+}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.tx-item.buy-item{background:var(--buy-bg);border-color:var(--buy-border);}
+.tx-item.sell-item{background:var(--sell-bg);border-color:var(--sell-border);}
+.tx-item .field label{color:inherit;opacity:0.65;}
+.tx-item.buy-item .field input{background:rgba(255,255,255,0.7);border-color:var(--buy-border);}
+.tx-item.sell-item .field input{background:rgba(255,255,255,0.7);border-color:var(--sell-border);}
+.tx-type-badge{
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  position:absolute;
+  top:6px;right:8px;
+  opacity:0.6;
+}
+.buy-item .tx-type-badge{color:var(--buy);}
+.sell-item .tx-type-badge{color:var(--sell);}
+
+.del-btn{
+  background:none;
+  border:1px solid currentColor;
+  border-radius:3px;
+  width:28px;height:28px;
+  cursor:pointer;
+  font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;
+  align-self:flex-end;
+  margin-bottom:1px;
+  flex-shrink:0;
+  opacity:0.45;
+}
+.buy-item .del-btn{color:var(--buy);}
+.sell-item .del-btn{color:var(--sell);}
+.del-btn:hover{opacity:1;background:rgba(0,0,0,0.05);}
+
+.add-btn{
+  width:100%;
+  padding:0.6rem;
+  border-radius:3px;
+  border:1px dashed;
+  background:transparent;
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:0.08em;
+  cursor:pointer;
+  transition:all 0.18s;
+  font-weight:400;
+}
+.add-btn.buy{border-color:var(--buy-border);color:var(--buy);}
+.add-btn.sell{border-color:var(--sell-border);color:var(--sell);}
+.add-btn:hover{background:rgba(0,0,0,0.03);}
+
+/* Calc button */
+.calc-btn{
+  width:100%;
+  margin-top:1.25rem;
+  padding:0.85rem;
+  background:var(--ink);
+  border:none;
+  border-radius:3px;
+  color:var(--paper);
+  font-family:var(--mono);
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:0.12em;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-transform:uppercase;
+}
+.calc-btn:hover{background:#333028;}
+.calc-btn:active{transform:scale(0.99);}
+
+/* Result */
+#result{display:none;}
+
+.result-hero{
+  text-align:center;
+  padding:2rem 1rem 1.5rem;
+  border-bottom:1px solid var(--rule);
+  margin-bottom:1.25rem;
+}
+.rh-label{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.15em;
+  color:var(--ink3);
+  text-transform:uppercase;
+  margin-bottom:0.5rem;
+}
+.rh-price{
+  font-family:var(--mono);
+  font-size:clamp(2.5rem,8vw,3.8rem);
+  font-weight:500;
+  letter-spacing:-0.02em;
+  line-height:1;
+}
+.rh-sub{font-size:13px;color:var(--ink3);margin-top:0.5rem;}
+.rh-change{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:13px;
+  padding:2px 10px;
+  border-radius:2px;
+  margin-top:0.4rem;
+  font-weight:500;
+}
+.up{background:var(--buy-bg);color:var(--buy);}
+.dn{background:var(--sell-bg);color:var(--sell);}
+.flat{background:var(--accent-light);color:var(--accent);}
+
+/* Stats table */
+.stats-table{width:100%;border-collapse:collapse;margin-bottom:1rem;}
+.stats-table tr{border-bottom:1px solid var(--rule);}
+.stats-table tr:last-child{border-bottom:none;}
+.stats-table td{
+  padding:0.55rem 0;
+  font-size:14px;
+  vertical-align:middle;
+}
+.stats-table td:first-child{color:var(--ink3);font-weight:300;}
+.stats-table td:last-child{
+  text-align:right;
+  font-family:var(--mono);
+  font-weight:500;
+  font-size:13.5px;
+}
+.stats-table .highlight td{color:var(--ink);font-weight:500;}
+.stats-table .highlight td:last-child{color:var(--accent);font-size:15px;}
+
+/* Watermark */
+.watermark{
+  position:fixed;bottom:1rem;right:1.5rem;
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.12em;
+  color:var(--rule2);
+  text-transform:uppercase;
+  pointer-events:none;
+}
+
+/* Tab */
+.tab-row{
+  display:flex;gap:0;
+  border-bottom:2px solid var(--rule2);
+  margin-bottom:1.25rem;
+}
+.tab{
+  padding:0.45rem 1.1rem;
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.1em;
+  color:var(--ink3);
+  cursor:pointer;
+  border:none;background:none;
+  border-bottom:2px solid transparent;
+  margin-bottom:-2px;
+  transition:all 0.15s;
+  text-transform:uppercase;
+}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab:hover:not(.active){color:var(--ink);}
+
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-label">Stock Position Calculator</div>
+    <h1>คำนวณ<em>ราคาเฉลี่ย</em>พอร์ต</h1>
+    <p class="hdr-sub">ซื้อเพิ่ม / ขายออกบางส่วน → ราคาเฉลี่ยใหม่จะอยู่ที่เท่าไหร่</p>
+  </div>
+
+  <!-- Step 1: Current position -->
+  <div class="section">
+    <div class="sec-label">01 · พอร์ตปัจจุบัน</div>
+    <div class="port-grid">
+      <div class="field">
+        <label>ราคาเฉลี่ยที่ถืออยู่ (บาท)</label>
+        <input type="number" id="curPrice" value="4.70" step="0.01" min="0.01" oninput="updateCurrentVal()">
+      </div>
+      <div class="field">
+        <label>จำนวนหน่วยที่ถืออยู่</label>
+        <input type="number" id="curQty" value="120" step="1" min="0" oninput="updateCurrentVal()">
+      </div>
+    </div>
+    <div class="current-val">
+      <span class="cv-label">มูลค่าพอร์ตปัจจุบัน</span>
+      <span class="cv-value" id="curVal">564.00 บาท</span>
+    </div>
+  </div>
+
+  <!-- Step 2: Transactions -->
+  <div class="section">
+    <div class="sec-label">02 · รายการซื้อ / ขายเพิ่มเติม</div>
+
+    <!-- Mode tabs -->
+    <div class="tab-row">
+      <button class="tab active" onclick="switchTab('buy',this)">▲ ซื้อเพิ่ม</button>
+      <button class="tab" onclick="switchTab('sell',this)">▼ ขายออก</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-buy">
+      <div class="tx-list" id="buy-list"></div>
+      <button class="add-btn buy" onclick="addRow('buy')">+ เพิ่มรายการซื้อ</button>
+    </div>
+
+    <div class="tab-panel" id="tab-sell">
+      <div class="tx-list" id="sell-list"></div>
+      <button class="add-btn sell" onclick="addRow('sell')">+ เพิ่มรายการขาย</button>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">CALCULATE</button>
+  </div>
+
+  <!-- Result -->
+  <div class="section" id="result">
+    <div class="sec-label">03 · ผลลัพธ์</div>
+    <div class="result-hero">
+      <div class="rh-label">ราคาเฉลี่ยใหม่</div>
+      <div class="rh-price" id="rh-price">—</div>
+      <div class="rh-sub" id="rh-sub">บาท / หน่วย</div>
+      <div id="rh-change"></div>
+    </div>
+    <table class="stats-table" id="stats-table"></table>
+  </div>
+
+</div>
+
+<div class="watermark">avg · calc</div>
+
+<script>
+let buyRows=[];
+let sellRows=[];
+let idCounter=0;
+
+function updateCurrentVal(){
+  const p=parseFloat(document.getElementById('curPrice').value)||0;
+  const q=parseFloat(document.getElementById('curQty').value)||0;
+  document.getElementById('curVal').textContent=fmtComma(p*q)+' บาท';
+}
+
+function switchTab(mode,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+mode).classList.add('active');
+}
+
+function addRow(mode){
+  const id=++idCounter;
+  const arr=mode==='buy'?buyRows:sellRows;
+  arr.push({id,mode});
+  renderRows(mode);
+}
+
+function delRow(mode,id){
+  if(mode==='buy') buyRows=buyRows.filter(r=>r.id!==id);
+  else sellRows=sellRows.filter(r=>r.id!==id);
+  renderRows(mode);
+}
+
+function renderRows(mode){
+  const arr=mode==='buy'?buyRows:sellRows;
+  const list=document.getElementById(mode+'-list');
+  list.innerHTML='';
+  arr.forEach(r=>{
+    const div=document.createElement('div');
+    div.className='tx-item '+(mode==='buy'?'buy-item':'sell-item');
+    div.id='row-'+r.id;
+    div.innerHTML=`
+      <div class="field">
+        <label>ราคา (บาท)</label>
+        <input type="number" id="p-${r.id}" value="" step="0.01" min="0.01" placeholder="0.00">
+      </div>
+      <div class="field">
+        <label>จำนวนหน่วย</label>
+        <input type="number" id="q-${r.id}" value="" step="1" min="1" placeholder="0">
+      </div>
+      <button class="del-btn" onclick="delRow('${mode}',${r.id})" title="ลบ">×</button>
+      <div class="tx-type-badge">${mode==='buy'?'BUY':'SELL'}</div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// init with one buy row
+addRow('buy');
+
+function fmtComma(n,d=2){
+  return parseFloat(n).toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+function fmt(n,d=2){return parseFloat(n).toFixed(d);}
+
+function calculate(){
+  const curP=parseFloat(document.getElementById('curPrice').value)||0;
+  const curQ=parseFloat(document.getElementById('curQty').value)||0;
+
+  // collect buys
+  let totalBuyCost=curP*curQ;
+  let totalBuyQty=curQ;
+  let buyDetail=[];
+
+  buyRows.forEach(r=>{
+    const p=parseFloat(document.getElementById('p-'+r.id)?.value)||0;
+    const q=parseFloat(document.getElementById('q-'+r.id)?.value)||0;
+    if(p>0&&q>0){
+      totalBuyCost+=p*q;
+      totalBuyQty+=q;
+      buyDetail.push({p,q});
+    }
+  });
+
+  // collect sells — reduces qty and cost proportionally
+  let totalSellQty=0;
+  let sellDetail=[];
+  sellRows.forEach(r=>{
+    const p=parseFloat(document.getElementById('p-'+r.id)?.value)||0;
+    const q=parseFloat(document.getElementById('q-'+r.id)?.value)||0;
+    if(p>0&&q>0){
+      totalSellQty+=q;
+      sellDetail.push({p,q});
+    }
+  });
+
+  const finalQty=totalBuyQty-totalSellQty;
+
+  if(finalQty<=0){
+    alert('จำนวนหุ้นหลังขายออกต้องมากกว่า 0 หน่วย');
+    return;
+  }
+
+  // avg cost = total cost of all buys / total buy qty
+  const avgBuyPrice = totalBuyQty > 0 ? totalBuyCost / totalBuyQty : 0;
+
+  // after selling: cost base reduced proportionally
+  // cost of remaining = avg * finalQty
+  const finalCost = avgBuyPrice * finalQty;
+  const finalAvg = finalCost / finalQty; // = avgBuyPrice (same — selling doesn't change avg)
+
+  // but sell proceeds change realized PnL
+  let totalSellProceeds=0;
+  sellDetail.forEach(s=>{ totalSellProceeds+=s.p*s.q; });
+
+  const realizedPnL = totalSellProceeds - (avgBuyPrice * totalSellQty);
+  const change = finalAvg - curP;
+  const changePct = curP > 0 ? (change/curP*100) : 0;
+
+  // show
+  document.getElementById('result').style.display='block';
+  document.getElementById('rh-price').textContent=fmtComma(finalAvg,4);
+  document.getElementById('rh-sub').textContent='บาท / หน่วย · เหลือ '+fmtComma(finalQty,0)+' หน่วย';
+
+  let cls='flat', sign=change===0?'':'';
+  if(change>0.0001){cls='up';sign='▲ ';}
+  else if(change<-0.0001){cls='dn';sign='▼ ';}
+
+  document.getElementById('rh-change').innerHTML =
+    `<span class="rh-change ${cls}">${sign}${change>=0?'+':''}${fmt(change,4)} บาท จากเดิม (${change>=0?'+':''}${fmt(changePct,2)}%)</span>`;
+
+  let rows='';
+  rows+=`<tr><td>ราคาเฉลี่ยเดิม</td><td>${fmtComma(curP,4)} บ.</td></tr>`;
+  rows+=`<tr><td>จำนวนหุ้นเดิม</td><td>${fmtComma(curQ,0)} หน่วย</td></tr>`;
+  rows+=`<tr><td>มูลค่าพอร์ตเดิม</td><td>${fmtComma(curP*curQ)} บ.</td></tr>`;
+
+  if(buyDetail.length>0){
+    rows+=`<tr><td colspan="2" style="padding-top:0.75rem;padding-bottom:0.1rem;font-size:11px;font-family:var(--mono);letter-spacing:0.08em;color:var(--buy);text-transform:uppercase;">▲ รายการซื้อเพิ่ม</td></tr>`;
+    buyDetail.forEach((b,i)=>{
+      rows+=`<tr><td style="padding-left:0.75rem;">ซื้อครั้งที่ ${i+1} (${fmtComma(b.p,4)} × ${fmtComma(b.q,0)})</td><td>${fmtComma(b.p*b.q)} บ.</td></tr>`;
+    });
+    rows+=`<tr><td style="padding-left:0.75rem;">รวมซื้อเพิ่ม</td><td>${fmtComma(totalBuyCost-curP*curQ)} บ.</td></tr>`;
+  }
+
+  if(sellDetail.length>0){
+    rows+=`<tr><td colspan="2" style="padding-top:0.75rem;padding-bottom:0.1rem;font-size:11px;font-family:var(--mono);letter-spacing:0.08em;color:var(--sell);text-transform:uppercase;">▼ รายการขายออก</td></tr>`;
+    sellDetail.forEach((s,i)=>{
+      rows+=`<tr><td style="padding-left:0.75rem;">ขายครั้งที่ ${i+1} (${fmtComma(s.p,4)} × ${fmtComma(s.q,0)})</td><td>${fmtComma(s.p*s.q)} บ.</td></tr>`;
+    });
+    rows+=`<tr><td style="padding-left:0.75rem;">กำไร/ขาดทุนที่ขายออก</td><td style="color:${realizedPnL>=0?'var(--buy)':'var(--sell)'}">${realizedPnL>=0?'+':''}${fmtComma(realizedPnL)} บ.</td></tr>`;
+  }
+
+  rows+=`<tr><td colspan="2" style="padding-top:0.5rem;"></td></tr>`;
+  rows+=`<tr class="highlight"><td>จำนวนหุ้นที่เหลือ</td><td>${fmtComma(finalQty,0)} หน่วย</td></tr>`;
+  rows+=`<tr class="highlight"><td>มูลค่าพอร์ตใหม่</td><td>${fmtComma(finalCost)} บ.</td></tr>`;
+  rows+=`<tr class="highlight"><td>ราคาเฉลี่ยใหม่</td><td>${fmtComma(finalAvg,4)} บ./หน่วย</td></tr>`;
+
+  document.getElementById('stats-table').innerHTML=rows;
+
+  setTimeout(()=>{
+    document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'});
+  },80);
+}
+
+updateCurrentVal();
+</script>
+</body>
+</html>
