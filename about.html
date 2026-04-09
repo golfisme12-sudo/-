@@ -493,8 +493,10 @@ body{
         </div>
       </div>
       <div style="background:var(--bg);border:1px solid var(--rule);border-radius:3px;padding:0.6rem 0.8rem;font-family:var(--mono);font-size:11px;color:var(--ink3);line-height:1.8;">
-        <span style="color:var(--ink2);font-weight:500;">รายการค่าธรรมเนียม KS (ต่อการซื้อขาย 1 ครั้ง)</span><br>
-        ค่าคอม (ตามบัญชี) + SET Fee 0.005% + Clearing 0.001% + Regulatory 0.001% + VAT 7%
+        <span style="color:var(--ink2);font-weight:500;">ค่าธรรมเนียม KS ที่ถูกหักออกจากยอด</span><br>
+        ซื้อ: งบที่กรอก − ค่าฟี = เงินซื้อหุ้นจริง → หน่วยที่ได้<br>
+        ขาย: ยอดขาย − ค่าฟี = เงินที่รับสุทธิ<br>
+        ค่าฟี = ค่าคอม + SET 0.005% + Clearing 0.001% + Reg 0.001% + VAT 7%
       </div>
     </div>
   </div>
@@ -583,6 +585,66 @@ function delRow(mode,id){
   renderRows(mode);
 }
 
+function fmtComma(n,d=2){
+  return parseFloat(n).toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+function fmt(n,d=2){return parseFloat(n).toFixed(d);}
+
+// Total fee rate multiplier (additive on trade value)
+function feeRate(commRate){
+  // comm + SET(0.005%) + Clearing(0.001%) + Regulatory(0.001%) = base
+  // then +7% VAT on base
+  const base = (commRate/100) + 0.005/100 + 0.001/100 + 0.001/100;
+  return base * 1.07; // includes VAT
+}
+
+function calcFee(tradeVal, commRate){
+  return tradeVal * feeRate(commRate);
+}
+
+// Given a budget (total cash to spend), how much actually goes to shares?
+// budget = shareVal + fee(shareVal) = shareVal * (1 + feeRate)
+// shareVal = budget / (1 + feeRate)
+function shareValFromBudget(budget, commRate){
+  return budget / (1 + feeRate(commRate));
+}
+
+function updateRowPreview(id, mode){
+  const commRate = parseFloat(document.getElementById('commRate').value)||0.15;
+  const feeMode  = document.getElementById('feeMode').value;
+  const p = parseFloat(document.getElementById('p-'+id)?.value)||0;
+
+  if(mode==='buy'){
+    const budget = parseFloat(document.getElementById('budget-'+id)?.value)||0;
+    const preview = document.getElementById('preview-'+id);
+    if(!preview) return;
+    if(p>0 && budget>0 && feeMode!=='none'){
+      const shareVal = shareValFromBudget(budget, commRate);
+      const fee      = budget - shareVal;
+      const qty      = shareVal / p;
+      preview.innerHTML=`<span style="color:var(--fee)">หักค่าฟี ${fmtComma(fee,4)} บ. → ได้ ${fmtComma(qty,2)} หน่วย</span>`;
+    } else if(p>0 && budget>0){
+      const qty = budget / p;
+      preview.innerHTML=`<span style="color:var(--ink3)">ได้ ${fmtComma(qty,2)} หน่วย (ไม่รวมค่าฟี)</span>`;
+    } else {
+      preview.innerHTML='';
+    }
+  } else {
+    const q = parseFloat(document.getElementById('q-'+id)?.value)||0;
+    const preview = document.getElementById('preview-'+id);
+    if(!preview) return;
+    if(p>0 && q>0 && feeMode!=='none'){
+      const gross = p * q;
+      const fee   = feeMode==='both' ? calcFee(gross, commRate) : 0;
+      const net   = gross - fee;
+      if(fee>0) preview.innerHTML=`<span style="color:var(--fee)">หักค่าฟี ${fmtComma(fee,4)} บ. → รับสุทธิ ${fmtComma(net,2)} บ.</span>`;
+      else preview.innerHTML='';
+    } else {
+      preview.innerHTML='';
+    }
+  }
+}
+
 function renderRows(mode){
   const arr=mode==='buy'?buyRows:sellRows;
   const list=document.getElementById(mode+'-list');
@@ -591,40 +653,46 @@ function renderRows(mode){
     const div=document.createElement('div');
     div.className='tx-item '+(mode==='buy'?'buy-item':'sell-item');
     div.id='row-'+r.id;
-    div.innerHTML=`
-      <div class="field">
-        <label>ราคา (บาท)</label>
-        <input type="number" id="p-${r.id}" value="" step="0.01" min="0.01" placeholder="0.00">
-      </div>
-      <div class="field">
-        <label>จำนวนหน่วย</label>
-        <input type="number" id="q-${r.id}" value="" step="1" min="1" placeholder="0">
-      </div>
-      <button class="del-btn" onclick="delRow('${mode}',${r.id})" title="ลบ">×</button>
-      <div class="tx-type-badge">${mode==='buy'?'BUY':'SELL'}</div>
-    `;
+
+    if(mode==='buy'){
+      div.innerHTML=`
+        <div class="field">
+          <label>ราคาต่อหน่วย (บาท)</label>
+          <input type="number" id="p-${r.id}" step="0.01" min="0.01" placeholder="0.00"
+            oninput="updateRowPreview(${r.id},'buy')">
+        </div>
+        <div class="field">
+          <label>งบที่ใช้ซื้อ (บาท)</label>
+          <input type="number" id="budget-${r.id}" step="1" min="1" placeholder="0"
+            oninput="updateRowPreview(${r.id},'buy')">
+        </div>
+        <button class="del-btn" onclick="delRow('buy',${r.id})" title="ลบ">×</button>
+        <div class="tx-type-badge">BUY</div>
+        <div id="preview-${r.id}" style="grid-column:1/-1;font-size:12px;font-family:var(--mono);min-height:16px;margin-top:2px;"></div>
+      `;
+    } else {
+      div.innerHTML=`
+        <div class="field">
+          <label>ราคาต่อหน่วย (บาท)</label>
+          <input type="number" id="p-${r.id}" step="0.01" min="0.01" placeholder="0.00"
+            oninput="updateRowPreview(${r.id},'sell')">
+        </div>
+        <div class="field">
+          <label>จำนวนหน่วยที่ขาย</label>
+          <input type="number" id="q-${r.id}" step="1" min="1" placeholder="0"
+            oninput="updateRowPreview(${r.id},'sell')">
+        </div>
+        <button class="del-btn" onclick="delRow('sell',${r.id})" title="ลบ">×</button>
+        <div class="tx-type-badge">SELL</div>
+        <div id="preview-${r.id}" style="grid-column:1/-1;font-size:12px;font-family:var(--mono);min-height:16px;margin-top:2px;"></div>
+      `;
+    }
     list.appendChild(div);
   });
 }
 
 // init with one buy row
 addRow('buy');
-
-function fmtComma(n,d=2){
-  return parseFloat(n).toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
-}
-function fmt(n,d=2){return parseFloat(n).toFixed(d);}
-
-// Calculate total fee for a transaction value
-function calcFee(val, commRate){
-  const comm   = val * (commRate / 100);
-  const setF   = val * 0.005 / 100;
-  const clrF   = val * 0.001 / 100;
-  const regF   = val * 0.001 / 100;
-  const sub    = comm + setF + clrF + regF;
-  const vatAmt = sub * 0.07;
-  return sub + vatAmt;
-}
 
 function calculate(){
   const curP      = parseFloat(document.getElementById('curPrice').value)||0;
@@ -636,58 +704,68 @@ function calculate(){
   const includeSellFee = feeMode==='both';
 
   // --- BUY side ---
-  // existing position cost (no fee re-applied to existing holdings)
-  let totalBuyCost = curP * curQ;
+  let totalBuyCost = curP * curQ;   // existing position (no fee re-applied)
   let totalBuyQty  = curQ;
   let buyDetail    = [];
   let totalBuyFees = 0;
 
   buyRows.forEach(r=>{
-    const p=parseFloat(document.getElementById('p-'+r.id)?.value)||0;
-    const q=parseFloat(document.getElementById('q-'+r.id)?.value)||0;
-    if(p>0&&q>0){
-      const txVal = p * q;
-      const fee   = includeBuyFee ? calcFee(txVal, commRate) : 0;
-      totalBuyCost += txVal + fee;   // cost includes fee
-      totalBuyQty  += q;
+    const p      = parseFloat(document.getElementById('p-'+r.id)?.value)||0;
+    const budget = parseFloat(document.getElementById('budget-'+r.id)?.value)||0;
+    if(p>0 && budget>0){
+      let shareVal, fee, qty;
+      if(includeBuyFee){
+        // fee is deducted FROM the budget → shares bought with remainder
+        shareVal = shareValFromBudget(budget, commRate);
+        fee      = budget - shareVal;
+        qty      = shareVal / p;
+      } else {
+        shareVal = budget;
+        fee      = 0;
+        qty      = budget / p;
+      }
+      // Cost base = full budget (shares + fee already paid)
+      totalBuyCost += budget;
+      totalBuyQty  += qty;
       totalBuyFees += fee;
-      buyDetail.push({p, q, fee, txVal});
+      buyDetail.push({p, budget, shareVal, fee, qty});
     }
   });
 
   // --- SELL side ---
   let totalSellQty      = 0;
-  let totalSellProceeds = 0;
+  let totalSellProceeds = 0; // net cash received after fees
   let totalSellFees     = 0;
   let sellDetail        = [];
 
   sellRows.forEach(r=>{
-    const p=parseFloat(document.getElementById('p-'+r.id)?.value)||0;
-    const q=parseFloat(document.getElementById('q-'+r.id)?.value)||0;
-    if(p>0&&q>0){
-      const txVal = p * q;
-      const fee   = includeSellFee ? calcFee(txVal, commRate) : 0;
+    const p = parseFloat(document.getElementById('p-'+r.id)?.value)||0;
+    const q = parseFloat(document.getElementById('q-'+r.id)?.value)||0;
+    if(p>0 && q>0){
+      const gross = p * q;
+      const fee   = includeSellFee ? calcFee(gross, commRate) : 0;
+      const net   = gross - fee;
       totalSellQty      += q;
-      totalSellProceeds += txVal - fee;  // proceeds after fee
+      totalSellProceeds += net;
       totalSellFees     += fee;
-      sellDetail.push({p, q, fee, txVal});
+      sellDetail.push({p, q, gross, fee, net});
     }
   });
 
   const finalQty = totalBuyQty - totalSellQty;
-  if(finalQty<=0){
+  if(finalQty <= 0){
     alert('จำนวนหุ้นหลังขายออกต้องมากกว่า 0 หน่วย');
     return;
   }
 
-  // avg cost per unit of all buys (includes fees on new buys)
+  // Average cost per unit across all buys (budget / total units)
   const avgBuyPrice = totalBuyQty > 0 ? totalBuyCost / totalBuyQty : 0;
 
-  // remaining cost base after sells
+  // Remaining cost base
   const finalCost = avgBuyPrice * finalQty;
   const finalAvg  = finalQty > 0 ? finalCost / finalQty : 0;
 
-  // realized P&L on sells
+  // Realized P&L: net proceeds minus cost of units sold
   const avgCostOfSold = avgBuyPrice * totalSellQty;
   const realizedPnL   = totalSellProceeds - avgCostOfSold;
 
@@ -698,10 +776,9 @@ function calculate(){
   // --- Render ---
   document.getElementById('result').style.display='block';
   document.getElementById('rh-price').textContent=fmtComma(finalAvg,4);
-  document.getElementById('rh-sub').textContent='บาท / หน่วย · เหลือ '+fmtComma(finalQty,0)+' หน่วย';
+  document.getElementById('rh-sub').textContent='บาท / หน่วย · เหลือ '+fmtComma(finalQty,2)+' หน่วย';
 
-  let cls='flat';
-  let sign='';
+  let cls='flat', sign='';
   if(change>0.0001){cls='up';sign='▲ ';}
   else if(change<-0.0001){cls='dn';sign='▼ ';}
 
@@ -716,44 +793,44 @@ function calculate(){
   if(buyDetail.length>0){
     rows+=`<tr><td colspan="2" style="padding-top:0.75rem;padding-bottom:0.1rem;font-size:11px;font-family:var(--mono);letter-spacing:0.08em;color:var(--buy);text-transform:uppercase;">▲ รายการซื้อเพิ่ม</td></tr>`;
     buyDetail.forEach((b,i)=>{
-      rows+=`<tr><td style="padding-left:0.75rem;">ซื้อครั้งที่ ${i+1} (${fmtComma(b.p,4)} × ${fmtComma(b.q,0)})</td><td>${fmtComma(b.txVal)} บ.</td></tr>`;
-      if(includeBuyFee && b.fee>0){
-        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">ค่าธรรมเนียม (${commRate}%+)</td><td>${fmtComma(b.fee,4)} บ.</td></tr>`;
-        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">ต้นทุนจริงครั้งที่ ${i+1}</td><td>${fmtComma(b.txVal+b.fee)} บ.</td></tr>`;
+      rows+=`<tr><td style="padding-left:0.75rem;">ซื้อครั้งที่ ${i+1} — งบ ${fmtComma(b.budget)} บ.</td><td>${fmtComma(b.p,4)} บ./หน่วย</td></tr>`;
+      if(b.fee>0){
+        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">ค่าธรรมเนียมที่หักจากงบ</td><td>−${fmtComma(b.fee,4)} บ.</td></tr>`;
+        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">เงินที่ใช้ซื้อหุ้นจริง</td><td>${fmtComma(b.shareVal,4)} บ.</td></tr>`;
       }
+      rows+=`<tr><td style="padding-left:0.75rem;">ได้หุ้น</td><td>${fmtComma(b.qty,4)} หน่วย</td></tr>`;
     });
-    if(includeBuyFee && totalBuyFees>0){
-      rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">รวมค่าธรรมเนียมฝั่งซื้อ</td><td>${fmtComma(totalBuyFees,4)} บ.</td></tr>`;
+    if(totalBuyFees>0){
+      rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">รวมค่าธรรมเนียมฝั่งซื้อ</td><td>−${fmtComma(totalBuyFees,4)} บ.</td></tr>`;
     }
-    rows+=`<tr><td style="padding-left:0.75rem;">ต้นทุนซื้อเพิ่มรวม</td><td>${fmtComma(totalBuyCost-curP*curQ)} บ.</td></tr>`;
   }
 
   if(sellDetail.length>0){
     rows+=`<tr><td colspan="2" style="padding-top:0.75rem;padding-bottom:0.1rem;font-size:11px;font-family:var(--mono);letter-spacing:0.08em;color:var(--sell);text-transform:uppercase;">▼ รายการขายออก</td></tr>`;
     sellDetail.forEach((s,i)=>{
-      rows+=`<tr><td style="padding-left:0.75rem;">ขายครั้งที่ ${i+1} (${fmtComma(s.p,4)} × ${fmtComma(s.q,0)})</td><td>${fmtComma(s.txVal)} บ.</td></tr>`;
-      if(includeSellFee && s.fee>0){
-        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">ค่าธรรมเนียม (${commRate}%+)</td><td>-${fmtComma(s.fee,4)} บ.</td></tr>`;
-        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">รับสุทธิครั้งที่ ${i+1}</td><td>${fmtComma(s.txVal-s.fee)} บ.</td></tr>`;
+      rows+=`<tr><td style="padding-left:0.75rem;">ขายครั้งที่ ${i+1} (${fmtComma(s.p,4)} × ${fmtComma(s.q,0)})</td><td>${fmtComma(s.gross)} บ.</td></tr>`;
+      if(s.fee>0){
+        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">ค่าธรรมเนียมที่ถูกหัก</td><td>−${fmtComma(s.fee,4)} บ.</td></tr>`;
+        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">รับเงินสุทธิ</td><td>${fmtComma(s.net,4)} บ.</td></tr>`;
       }
     });
-    if(includeSellFee && totalSellFees>0){
-      rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">รวมค่าธรรมเนียมฝั่งขาย</td><td>${fmtComma(totalSellFees,4)} บ.</td></tr>`;
+    if(totalSellFees>0){
+      rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">รวมค่าธรรมเนียมฝั่งขาย</td><td>−${fmtComma(totalSellFees,4)} บ.</td></tr>`;
     }
     rows+=`<tr><td style="padding-left:0.75rem;">กำไร/ขาดทุนที่ขายออก (สุทธิ)</td><td style="color:${realizedPnL>=0?'var(--buy)':'var(--sell)'}">${realizedPnL>=0?'+':''}${fmtComma(realizedPnL)} บ.</td></tr>`;
   }
 
   if(totalFees>0){
-    rows+=`<tr><td colspan="2" style="padding-top:0.6rem;padding-bottom:0.1rem;font-size:11px;font-family:var(--mono);letter-spacing:0.08em;color:var(--fee);text-transform:uppercase;">⊟ ค่าธรรมเนียมรวมทั้งหมด</td></tr>`;
-    if(totalBuyFees>0) rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">ฝั่งซื้อ (${commRate}%+VAT)</td><td>${fmtComma(totalBuyFees,4)} บ.</td></tr>`;
-    if(totalSellFees>0) rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">ฝั่งขาย (${commRate}%+VAT)</td><td>${fmtComma(totalSellFees,4)} บ.</td></tr>`;
-    rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;font-weight:500;color:var(--fee)">รวมค่าธรรมเนียมทั้งสิ้น</td><td style="font-weight:500;color:var(--fee)">${fmtComma(totalFees,4)} บ.</td></tr>`;
+    rows+=`<tr><td colspan="2" style="padding-top:0.6rem;padding-bottom:0.1rem;font-size:11px;font-family:var(--mono);letter-spacing:0.08em;color:var(--fee);text-transform:uppercase;">⊟ ค่าธรรมเนียมรวม</td></tr>`;
+    if(totalBuyFees>0) rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">ฝั่งซื้อ</td><td>−${fmtComma(totalBuyFees,4)} บ.</td></tr>`;
+    if(totalSellFees>0) rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">ฝั่งขาย</td><td>−${fmtComma(totalSellFees,4)} บ.</td></tr>`;
+    rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;font-weight:500;color:var(--fee)">รวมทั้งสิ้น</td><td style="font-weight:500;color:var(--fee)">−${fmtComma(totalFees,4)} บ.</td></tr>`;
   }
 
   rows+=`<tr><td colspan="2" style="padding-top:0.5rem;"></td></tr>`;
-  rows+=`<tr class="highlight"><td>จำนวนหุ้นที่เหลือ</td><td>${fmtComma(finalQty,0)} หน่วย</td></tr>`;
-  rows+=`<tr class="highlight"><td>มูลค่าพอร์ตใหม่ (ต้นทุน)</td><td>${fmtComma(finalCost)} บ.</td></tr>`;
-  rows+=`<tr class="highlight"><td>ราคาเฉลี่ยใหม่${totalFees>0?' (รวมค่าฟี)':''}</td><td>${fmtComma(finalAvg,4)} บ./หน่วย</td></tr>`;
+  rows+=`<tr class="highlight"><td>จำนวนหุ้นที่เหลือ</td><td>${fmtComma(finalQty,4)} หน่วย</td></tr>`;
+  rows+=`<tr class="highlight"><td>ต้นทุนพอร์ตใหม่</td><td>${fmtComma(finalCost)} บ.</td></tr>`;
+  rows+=`<tr class="highlight"><td>ราคาเฉลี่ยใหม่${totalFees>0?' (หักค่าฟีแล้ว)':''}</td><td>${fmtComma(finalAvg,4)} บ./หน่วย</td></tr>`;
 
   document.getElementById('stats-table').innerHTML=rows;
 
