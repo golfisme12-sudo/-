@@ -27,6 +27,9 @@
   --mono:'DM Mono',monospace;
   --sans:'Sarabun',sans-serif;
   --shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.06);
+  --fee:#2a4a6b;
+  --fee-bg:#eef4fb;
+  --fee-border:#adc8e8;
 }
 
 body{
@@ -368,6 +371,67 @@ body{
 
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
+
+/* Fee section */
+.fee-header{
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;
+  user-select:none;
+  margin-bottom:0;
+  padding-bottom:0;
+}
+.fee-toggle{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.1em;
+  color:var(--fee);
+  background:var(--fee-bg);
+  border:1px solid var(--fee-border);
+  border-radius:2px;
+  padding:2px 8px;
+  cursor:pointer;
+}
+.fee-body{
+  margin-top:1rem;
+  overflow:hidden;
+  transition:max-height 0.3s ease, opacity 0.3s ease;
+  max-height:0;opacity:0;pointer-events:none;
+}
+.fee-body.open{max-height:400px;opacity:1;pointer-events:auto;}
+
+.fee-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0.75rem;
+  margin-bottom:0.75rem;
+}
+@media(max-width:480px){.fee-grid{grid-template-columns:1fr;}}
+
+.fee-summary{
+  padding:0.75rem 1rem;
+  background:var(--fee-bg);
+  border:1px solid var(--fee-border);
+  border-radius:3px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:0.4rem;
+  margin-top:0.75rem;
+}
+.fee-sum-label{font-size:11px;color:var(--fee);font-family:var(--mono);letter-spacing:0.06em;}
+.fee-sum-val{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--fee);}
+
+.fee-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:var(--mono);font-size:9px;letter-spacing:0.1em;
+  color:var(--fee);background:var(--fee-bg);
+  border:1px solid var(--fee-border);
+  border-radius:2px;padding:2px 7px;
+  text-transform:uppercase;margin-left:6px;
+  vertical-align:middle;
+}
+
+/* result fee rows */
+.fee-row td{color:var(--fee) !important;font-size:12px !important;}
+.fee-row td:first-child{padding-left:0.75rem;}
 </style>
 </head>
 <body>
@@ -396,6 +460,42 @@ body{
     <div class="current-val">
       <span class="cv-label">มูลค่าพอร์ตปัจจุบัน</span>
       <span class="cv-value" id="curVal">564.00 บาท</span>
+    </div>
+  </div>
+
+  <!-- Step 1.5: Fee Settings -->
+  <div class="section">
+    <div class="sec-label">
+      <span>01b · ค่าธรรมเนียม</span>
+      <span class="fee-badge" id="fee-active-badge">KS · 0.15%</span>
+    </div>
+    <div class="fee-header" onclick="toggleFeeBody()">
+      <span style="font-size:13px;color:var(--ink3);font-weight:300;">รวมค่าธรรมเนียมในการคำนวณต้นทุน</span>
+      <button class="fee-toggle" id="fee-toggle-btn">▼ ตั้งค่า</button>
+    </div>
+    <div class="fee-body" id="fee-body">
+      <div class="fee-grid" style="margin-top:0;">
+        <div class="field">
+          <label>ประเภทบัญชี (ค่าคอม)</label>
+          <select id="commRate" onchange="updateFeeBadge()">
+            <option value="0.15">Cash Balance · 0.15%</option>
+            <option value="0.20">Cash Account · 0.20%</option>
+            <option value="0.25">ผ่านเจ้าหน้าที่ · 0.25%</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>คำนวณรวมค่าฟี</label>
+          <select id="feeMode" onchange="updateFeeBadge()">
+            <option value="buy">เฉพาะฝั่งซื้อ</option>
+            <option value="both">ซื้อ + ขาย</option>
+            <option value="none">ไม่รวม</option>
+          </select>
+        </div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--rule);border-radius:3px;padding:0.6rem 0.8rem;font-family:var(--mono);font-size:11px;color:var(--ink3);line-height:1.8;">
+        <span style="color:var(--ink2);font-weight:500;">รายการค่าธรรมเนียม KS (ต่อการซื้อขาย 1 ครั้ง)</span><br>
+        ค่าคอม (ตามบัญชี) + SET Fee 0.005% + Clearing 0.001% + Regulatory 0.001% + VAT 7%
+      </div>
     </div>
   </div>
 
@@ -447,6 +547,20 @@ function updateCurrentVal(){
   const p=parseFloat(document.getElementById('curPrice').value)||0;
   const q=parseFloat(document.getElementById('curQty').value)||0;
   document.getElementById('curVal').textContent=fmtComma(p*q)+' บาท';
+}
+
+function toggleFeeBody(){
+  const body=document.getElementById('fee-body');
+  const btn=document.getElementById('fee-toggle-btn');
+  const open=body.classList.toggle('open');
+  btn.textContent=open?'▲ ซ่อน':'▼ ตั้งค่า';
+}
+
+function updateFeeBadge(){
+  const rate=document.getElementById('commRate').value;
+  const mode=document.getElementById('feeMode').value;
+  const modeLabel={buy:'ฝั่งซื้อ',both:'ซื้อ+ขาย',none:'ปิด'};
+  document.getElementById('fee-active-badge').textContent=`KS · ${rate}% · ${modeLabel[mode]}`;
 }
 
 function switchTab(mode,btn){
@@ -501,70 +615,97 @@ function fmtComma(n,d=2){
 }
 function fmt(n,d=2){return parseFloat(n).toFixed(d);}
 
-function calculate(){
-  const curP=parseFloat(document.getElementById('curPrice').value)||0;
-  const curQ=parseFloat(document.getElementById('curQty').value)||0;
+// Calculate total fee for a transaction value
+function calcFee(val, commRate){
+  const comm   = val * (commRate / 100);
+  const setF   = val * 0.005 / 100;
+  const clrF   = val * 0.001 / 100;
+  const regF   = val * 0.001 / 100;
+  const sub    = comm + setF + clrF + regF;
+  const vatAmt = sub * 0.07;
+  return sub + vatAmt;
+}
 
-  // collect buys
-  let totalBuyCost=curP*curQ;
-  let totalBuyQty=curQ;
-  let buyDetail=[];
+function calculate(){
+  const curP      = parseFloat(document.getElementById('curPrice').value)||0;
+  const curQ      = parseFloat(document.getElementById('curQty').value)||0;
+  const commRate  = parseFloat(document.getElementById('commRate').value)||0.15;
+  const feeMode   = document.getElementById('feeMode').value;
+
+  const includeBuyFee  = feeMode==='buy'||feeMode==='both';
+  const includeSellFee = feeMode==='both';
+
+  // --- BUY side ---
+  // existing position cost (no fee re-applied to existing holdings)
+  let totalBuyCost = curP * curQ;
+  let totalBuyQty  = curQ;
+  let buyDetail    = [];
+  let totalBuyFees = 0;
 
   buyRows.forEach(r=>{
     const p=parseFloat(document.getElementById('p-'+r.id)?.value)||0;
     const q=parseFloat(document.getElementById('q-'+r.id)?.value)||0;
     if(p>0&&q>0){
-      totalBuyCost+=p*q;
-      totalBuyQty+=q;
-      buyDetail.push({p,q});
+      const txVal = p * q;
+      const fee   = includeBuyFee ? calcFee(txVal, commRate) : 0;
+      totalBuyCost += txVal + fee;   // cost includes fee
+      totalBuyQty  += q;
+      totalBuyFees += fee;
+      buyDetail.push({p, q, fee, txVal});
     }
   });
 
-  // collect sells — reduces qty and cost proportionally
-  let totalSellQty=0;
-  let sellDetail=[];
+  // --- SELL side ---
+  let totalSellQty      = 0;
+  let totalSellProceeds = 0;
+  let totalSellFees     = 0;
+  let sellDetail        = [];
+
   sellRows.forEach(r=>{
     const p=parseFloat(document.getElementById('p-'+r.id)?.value)||0;
     const q=parseFloat(document.getElementById('q-'+r.id)?.value)||0;
     if(p>0&&q>0){
-      totalSellQty+=q;
-      sellDetail.push({p,q});
+      const txVal = p * q;
+      const fee   = includeSellFee ? calcFee(txVal, commRate) : 0;
+      totalSellQty      += q;
+      totalSellProceeds += txVal - fee;  // proceeds after fee
+      totalSellFees     += fee;
+      sellDetail.push({p, q, fee, txVal});
     }
   });
 
-  const finalQty=totalBuyQty-totalSellQty;
-
+  const finalQty = totalBuyQty - totalSellQty;
   if(finalQty<=0){
     alert('จำนวนหุ้นหลังขายออกต้องมากกว่า 0 หน่วย');
     return;
   }
 
-  // avg cost = total cost of all buys / total buy qty
+  // avg cost per unit of all buys (includes fees on new buys)
   const avgBuyPrice = totalBuyQty > 0 ? totalBuyCost / totalBuyQty : 0;
 
-  // after selling: cost base reduced proportionally
-  // cost of remaining = avg * finalQty
+  // remaining cost base after sells
   const finalCost = avgBuyPrice * finalQty;
-  const finalAvg = finalCost / finalQty; // = avgBuyPrice (same — selling doesn't change avg)
+  const finalAvg  = finalQty > 0 ? finalCost / finalQty : 0;
 
-  // but sell proceeds change realized PnL
-  let totalSellProceeds=0;
-  sellDetail.forEach(s=>{ totalSellProceeds+=s.p*s.q; });
+  // realized P&L on sells
+  const avgCostOfSold = avgBuyPrice * totalSellQty;
+  const realizedPnL   = totalSellProceeds - avgCostOfSold;
 
-  const realizedPnL = totalSellProceeds - (avgBuyPrice * totalSellQty);
-  const change = finalAvg - curP;
-  const changePct = curP > 0 ? (change/curP*100) : 0;
+  const change    = finalAvg - curP;
+  const changePct = curP > 0 ? (change / curP * 100) : 0;
+  const totalFees = totalBuyFees + totalSellFees;
 
-  // show
+  // --- Render ---
   document.getElementById('result').style.display='block';
   document.getElementById('rh-price').textContent=fmtComma(finalAvg,4);
   document.getElementById('rh-sub').textContent='บาท / หน่วย · เหลือ '+fmtComma(finalQty,0)+' หน่วย';
 
-  let cls='flat', sign=change===0?'':'';
+  let cls='flat';
+  let sign='';
   if(change>0.0001){cls='up';sign='▲ ';}
   else if(change<-0.0001){cls='dn';sign='▼ ';}
 
-  document.getElementById('rh-change').innerHTML =
+  document.getElementById('rh-change').innerHTML=
     `<span class="rh-change ${cls}">${sign}${change>=0?'+':''}${fmt(change,4)} บาท จากเดิม (${change>=0?'+':''}${fmt(changePct,2)}%)</span>`;
 
   let rows='';
@@ -575,23 +716,44 @@ function calculate(){
   if(buyDetail.length>0){
     rows+=`<tr><td colspan="2" style="padding-top:0.75rem;padding-bottom:0.1rem;font-size:11px;font-family:var(--mono);letter-spacing:0.08em;color:var(--buy);text-transform:uppercase;">▲ รายการซื้อเพิ่ม</td></tr>`;
     buyDetail.forEach((b,i)=>{
-      rows+=`<tr><td style="padding-left:0.75rem;">ซื้อครั้งที่ ${i+1} (${fmtComma(b.p,4)} × ${fmtComma(b.q,0)})</td><td>${fmtComma(b.p*b.q)} บ.</td></tr>`;
+      rows+=`<tr><td style="padding-left:0.75rem;">ซื้อครั้งที่ ${i+1} (${fmtComma(b.p,4)} × ${fmtComma(b.q,0)})</td><td>${fmtComma(b.txVal)} บ.</td></tr>`;
+      if(includeBuyFee && b.fee>0){
+        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">ค่าธรรมเนียม (${commRate}%+)</td><td>${fmtComma(b.fee,4)} บ.</td></tr>`;
+        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">ต้นทุนจริงครั้งที่ ${i+1}</td><td>${fmtComma(b.txVal+b.fee)} บ.</td></tr>`;
+      }
     });
-    rows+=`<tr><td style="padding-left:0.75rem;">รวมซื้อเพิ่ม</td><td>${fmtComma(totalBuyCost-curP*curQ)} บ.</td></tr>`;
+    if(includeBuyFee && totalBuyFees>0){
+      rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">รวมค่าธรรมเนียมฝั่งซื้อ</td><td>${fmtComma(totalBuyFees,4)} บ.</td></tr>`;
+    }
+    rows+=`<tr><td style="padding-left:0.75rem;">ต้นทุนซื้อเพิ่มรวม</td><td>${fmtComma(totalBuyCost-curP*curQ)} บ.</td></tr>`;
   }
 
   if(sellDetail.length>0){
     rows+=`<tr><td colspan="2" style="padding-top:0.75rem;padding-bottom:0.1rem;font-size:11px;font-family:var(--mono);letter-spacing:0.08em;color:var(--sell);text-transform:uppercase;">▼ รายการขายออก</td></tr>`;
     sellDetail.forEach((s,i)=>{
-      rows+=`<tr><td style="padding-left:0.75rem;">ขายครั้งที่ ${i+1} (${fmtComma(s.p,4)} × ${fmtComma(s.q,0)})</td><td>${fmtComma(s.p*s.q)} บ.</td></tr>`;
+      rows+=`<tr><td style="padding-left:0.75rem;">ขายครั้งที่ ${i+1} (${fmtComma(s.p,4)} × ${fmtComma(s.q,0)})</td><td>${fmtComma(s.txVal)} บ.</td></tr>`;
+      if(includeSellFee && s.fee>0){
+        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">ค่าธรรมเนียม (${commRate}%+)</td><td>-${fmtComma(s.fee,4)} บ.</td></tr>`;
+        rows+=`<tr class="fee-row"><td style="padding-left:1.25rem;">รับสุทธิครั้งที่ ${i+1}</td><td>${fmtComma(s.txVal-s.fee)} บ.</td></tr>`;
+      }
     });
-    rows+=`<tr><td style="padding-left:0.75rem;">กำไร/ขาดทุนที่ขายออก</td><td style="color:${realizedPnL>=0?'var(--buy)':'var(--sell)'}">${realizedPnL>=0?'+':''}${fmtComma(realizedPnL)} บ.</td></tr>`;
+    if(includeSellFee && totalSellFees>0){
+      rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">รวมค่าธรรมเนียมฝั่งขาย</td><td>${fmtComma(totalSellFees,4)} บ.</td></tr>`;
+    }
+    rows+=`<tr><td style="padding-left:0.75rem;">กำไร/ขาดทุนที่ขายออก (สุทธิ)</td><td style="color:${realizedPnL>=0?'var(--buy)':'var(--sell)'}">${realizedPnL>=0?'+':''}${fmtComma(realizedPnL)} บ.</td></tr>`;
+  }
+
+  if(totalFees>0){
+    rows+=`<tr><td colspan="2" style="padding-top:0.6rem;padding-bottom:0.1rem;font-size:11px;font-family:var(--mono);letter-spacing:0.08em;color:var(--fee);text-transform:uppercase;">⊟ ค่าธรรมเนียมรวมทั้งหมด</td></tr>`;
+    if(totalBuyFees>0) rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">ฝั่งซื้อ (${commRate}%+VAT)</td><td>${fmtComma(totalBuyFees,4)} บ.</td></tr>`;
+    if(totalSellFees>0) rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;">ฝั่งขาย (${commRate}%+VAT)</td><td>${fmtComma(totalSellFees,4)} บ.</td></tr>`;
+    rows+=`<tr class="fee-row"><td style="padding-left:0.75rem;font-weight:500;color:var(--fee)">รวมค่าธรรมเนียมทั้งสิ้น</td><td style="font-weight:500;color:var(--fee)">${fmtComma(totalFees,4)} บ.</td></tr>`;
   }
 
   rows+=`<tr><td colspan="2" style="padding-top:0.5rem;"></td></tr>`;
   rows+=`<tr class="highlight"><td>จำนวนหุ้นที่เหลือ</td><td>${fmtComma(finalQty,0)} หน่วย</td></tr>`;
-  rows+=`<tr class="highlight"><td>มูลค่าพอร์ตใหม่</td><td>${fmtComma(finalCost)} บ.</td></tr>`;
-  rows+=`<tr class="highlight"><td>ราคาเฉลี่ยใหม่</td><td>${fmtComma(finalAvg,4)} บ./หน่วย</td></tr>`;
+  rows+=`<tr class="highlight"><td>มูลค่าพอร์ตใหม่ (ต้นทุน)</td><td>${fmtComma(finalCost)} บ.</td></tr>`;
+  rows+=`<tr class="highlight"><td>ราคาเฉลี่ยใหม่${totalFees>0?' (รวมค่าฟี)':''}</td><td>${fmtComma(finalAvg,4)} บ./หน่วย</td></tr>`;
 
   document.getElementById('stats-table').innerHTML=rows;
 
@@ -601,6 +763,7 @@ function calculate(){
 }
 
 updateCurrentVal();
+updateFeeBadge();
 </script>
 </body>
 </html>
