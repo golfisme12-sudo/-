@@ -98,6 +98,72 @@
     margin-bottom: 1.25rem;
   }
 
+  /* Currency Toggle */
+  .currency-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .currency-toggle-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .currency-toggle {
+    display: flex;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .currency-toggle button {
+    padding: 0.35rem 0.9rem;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .currency-toggle button.active-thb {
+    background: #1e4080;
+    color: #60a5fa;
+  }
+  .currency-toggle button.active-usd {
+    background: #14532d;
+    color: var(--accent);
+  }
+  .currency-toggle button:hover:not(.active-thb):not(.active-usd) {
+    color: var(--text);
+  }
+
+  /* Input with prefix */
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .input-prefix {
+    position: absolute;
+    left: 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .input-prefix.thb { color: #60a5fa; }
+  .input-prefix.usd { color: var(--accent); }
+  .input-wrap input {
+    padding-left: 2.2rem !important;
+  }
+
   /* Inputs */
   .inputs-grid {
     display: grid;
@@ -138,6 +204,15 @@
   .field select option { background: #1a2420; }
 
   .acct-span { grid-column: 1 / -1; }
+
+  /* USD note under price fields */
+  .converted-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 0.15rem;
+    min-height: 1em;
+  }
 
   /* Calculate button */
   .calc-btn {
@@ -190,6 +265,13 @@
     line-height: 1;
     letter-spacing: -0.02em;
   }
+  .result-thb {
+    font-family: var(--mono);
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-top: 0.4rem;
+    opacity: 0.85;
+  }
   .result-pct {
     font-family: var(--mono);
     font-size: 1rem;
@@ -199,10 +281,12 @@
 
   .profit .result-tag { color: var(--accent); }
   .profit .result-amount { color: var(--accent); }
+  .profit .result-thb { color: var(--accent); }
   .profit .result-pct { color: var(--accent); }
 
   .loss .result-tag { color: var(--red); }
   .loss .result-amount { color: var(--red); }
+  .loss .result-thb { color: var(--red); }
   .loss .result-pct { color: var(--red); }
 
   /* Stats row */
@@ -234,6 +318,12 @@
     font-weight: 500;
     color: var(--text);
   }
+  .stat-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
 
   /* Fee breakdown table */
   .fee-title {
@@ -249,20 +339,22 @@
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
   }
-  @media (max-width: 480px) { .fee-cols { grid-template-columns: 1fr; } }
-
-  .fee-table { width: 100%; border-collapse: collapse; }
-  .fee-table th {
+  .fee-table {
+    width: 100%;
+    border-collapse: collapse;
     font-family: var(--mono);
+  }
+  .fee-table th {
     font-size: 9px;
     letter-spacing: 0.08em;
     color: var(--muted);
-    padding: 0 0 0.5rem;
-    text-align: left;
+    text-transform: uppercase;
+    padding: 0.25rem 0;
     border-bottom: 1px solid var(--border);
+    text-align: left;
   }
+  .fee-table th:last-child { text-align: right; }
   .fee-table td {
-    font-family: var(--mono);
     font-size: 12px;
     padding: 0.35rem 0;
     border-bottom: 1px solid rgba(36,48,40,0.6);
@@ -334,10 +426,34 @@
     border: 1px solid;
     text-transform: uppercase;
   }
+  .thb-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+    border: 1px solid;
+    text-transform: uppercase;
+  }
   .profit .usd-badge { color: var(--accent); border-color: var(--accent-dim); background: var(--accent-glow); }
   .loss   .usd-badge { color: var(--red);    border-color: rgba(248,113,113,0.4); background: var(--red-dim); }
+  .profit .thb-badge { color: #60a5fa; border-color: #1e4080; background: rgba(96,165,250,0.1); }
+  .loss   .thb-badge { color: #fb923c; border-color: #7c2d12; background: rgba(251,146,60,0.1); }
   .profit .usd-line  { color: var(--accent); }
   .loss   .usd-line  { color: var(--red); }
+  .profit .thb-line  { color: #60a5fa; }
+  .loss   .thb-line  { color: #fb923c; }
+  .thb-line {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-top: 0.4rem;
+    letter-spacing: -0.01em;
+    opacity: 0.85;
+  }
 
   .rate-note {
     font-family: var(--mono);
@@ -354,26 +470,44 @@
   <div class="header">
     <h1>หุ้น<span>ไทย</span><br>คำนวณกำไร/ขาดทุน</h1>
     <p class="subtitle">อ้างอิง อัตราค่าธรรมเนียม ธ.กสิกรไทย (KS Trade+)</p>
-	<a href="about.html" style="color: white; background-color: orange; padding: 1px 10px; text-decoration: none; border-radius: 5px;">คำนวณราคาเฉลี่ยพอร์ต</a>
+    <a href="about.html" style="color: white; background-color: orange; padding: 1px 10px; text-decoration: none; border-radius: 5px;">คำนวณราคาเฉลี่ยพอร์ต</a>
 	<a href="compare.html" style="background-color: #2ecc89; color: white; padding: 1px 10px; text-decoration: none; border-radius: 5px;">
         เปรียบเทียบราคา
-    </a>  
+    </a>
   </div>
 
   <div class="card">
-    <div class="card-title" style="color: white"> <h1 style="font-size: 20px;">ข้อมูลการซื้อขาย</div>
+    <div class="card-title" style="color: white"><h1 style="font-size: 20px;">ข้อมูลการซื้อขาย</h1></div>
+
+    <!-- Currency Toggle -->
+    <div class="currency-toggle-wrap">
+      <span class="currency-toggle-label">สกุลเงินที่ใส่ราคา</span>
+      <div class="currency-toggle">
+        <button id="btnTHB" class="active-thb" onclick="setCurrency('THB')">฿ THB</button>
+        <button id="btnUSD" onclick="setCurrency('USD')">$ USD</button>
+      </div>
+    </div>
+
     <div class="inputs-grid">
       <div class="field">
-        <label>ราคาซื้อ (บาท/หน่วย)</label>
-        <input type="number" id="buyPrice" value=" " step="0.01" min="0.01">
+        <label id="lblBuy">ราคาซื้อ (บาท/หน่วย)</label>
+        <div class="input-wrap">
+          <span class="input-prefix thb" id="prefixBuy">฿</span>
+          <input type="number" id="buyPrice" value="" step="0.01" min="0.01" oninput="updateConversionNote()">
+        </div>
+        <div class="converted-note" id="noteBuy"></div>
       </div>
       <div class="field">
-        <label>ราคาขาย (บาท/หน่วย)</label>
-        <input type="number" id="sellPrice" value=" " step="0.01" min="0.01">
+        <label id="lblSell">ราคาขาย (บาท/หน่วย)</label>
+        <div class="input-wrap">
+          <span class="input-prefix thb" id="prefixSell">฿</span>
+          <input type="number" id="sellPrice" value="" step="0.01" min="0.01" oninput="updateConversionNote()">
+        </div>
+        <div class="converted-note" id="noteSell"></div>
       </div>
       <div class="field">
         <label>จำนวนหน่วย</label>
-        <input type="number" id="qty" value=" " step="1" min="1">
+        <input type="number" id="qty" value="" step="1" min="1">
       </div>
       <div class="field">
         <label>ประเภทบัญชี</label>
@@ -385,7 +519,7 @@
       </div>
       <div class="field acct-span" style="margin-top:0.25rem;">
         <label>อัตราแลกเปลี่ยน (1 USD = ? บาท)</label>
-        <input type="number" id="usdRate" value="34" step="0.01" min="0.01" placeholder="34.00">
+        <input type="number" id="usdRate" value="34" step="0.01" min="0.01" placeholder="34.00" oninput="updateConversionNote()">
       </div>
     </div>
     <button class="calc-btn" onclick="calculate()">CALCULATE</button>
@@ -413,12 +547,77 @@
   </div>
 
   <div class="footer" style="color: white">
-    <h1 style="font-size: 15px;">อัตราค่าธรรมเนียม KS·ข้อมูลเพื่อประกอบการตัดสินใจเท่านั้น 
+    <h1 style="font-size: 15px;">อัตราค่าธรรมเนียม KS·ข้อมูลเพื่อประกอบการตัดสินใจเท่านั้น</h1>
   </div>
 
 </div>
 
 <script>
+let currentCurrency = 'THB';
+
+function setCurrency(cur) {
+  currentCurrency = cur;
+  const isUSD = cur === 'USD';
+
+  document.getElementById('btnTHB').className = isUSD ? '' : 'active-thb';
+  document.getElementById('btnUSD').className = isUSD ? 'active-usd' : '';
+
+  document.getElementById('prefixBuy').textContent  = isUSD ? '$' : '฿';
+  document.getElementById('prefixSell').textContent = isUSD ? '$' : '฿';
+  document.getElementById('prefixBuy').className  = 'input-prefix ' + (isUSD ? 'usd' : 'thb');
+  document.getElementById('prefixSell').className = 'input-prefix ' + (isUSD ? 'usd' : 'thb');
+
+  document.getElementById('lblBuy').textContent  = isUSD ? 'ราคาซื้อ (USD/หน่วย)' : 'ราคาซื้อ (บาท/หน่วย)';
+  document.getElementById('lblSell').textContent = isUSD ? 'ราคาขาย (USD/หน่วย)' : 'ราคาขาย (บาท/หน่วย)';
+
+  updateConversionNote();
+}
+
+function updateConversionNote() {
+  const usdRate = parseFloat(document.getElementById('usdRate').value) || 34;
+  const buy     = parseFloat(document.getElementById('buyPrice').value);
+  const sell    = parseFloat(document.getElementById('sellPrice').value);
+
+  if (currentCurrency === 'USD') {
+    document.getElementById('noteBy').textContent = '';
+    document.getElementById('noteSell').textContent = '';
+    // Show THB equivalent
+    if (!isNaN(buy))  document.getElementById('noteBy') && (document.getElementById('noteBy').textContent  = '≈ ฿' + fmtComma(buy  * usdRate) + ' บาท/หน่วย');
+    if (!isNaN(sell)) document.getElementById('noteSell') && (document.getElementById('noteSell').textContent = '≈ ฿' + fmtComma(sell * usdRate) + ' บาท/หน่วย');
+  } else {
+    // Show USD equivalent
+    if (!isNaN(buy) && buy > 0)   document.getElementById('noteBy') && (document.getElementById('noteBy').textContent  = '≈ $' + (buy  / usdRate).toFixed(4) + ' USD/หน่วย');
+    else if (document.getElementById('noteBy')) document.getElementById('noteBy').textContent = '';
+    if (!isNaN(sell) && sell > 0) document.getElementById('noteSell') && (document.getElementById('noteSell').textContent = '≈ $' + (sell / usdRate).toFixed(4) + ' USD/หน่วย');
+    else if (document.getElementById('noteSell')) document.getElementById('noteSell').textContent = '';
+  }
+}
+
+// Fix ID typo — map noteBy → noteBy correctly
+document.addEventListener('DOMContentLoaded', () => {
+  // patch: rename noteBy to use the correct element
+  updateConversionNote();
+});
+
+function noteByEl() { return document.getElementById('noteBy'); }
+
+// Patched updateConversionNote with correct IDs
+function updateConversionNote() {
+  const usdRate = parseFloat(document.getElementById('usdRate').value) || 34;
+  const buy  = parseFloat(document.getElementById('buyPrice').value);
+  const sell = parseFloat(document.getElementById('sellPrice').value);
+  const noteBuy  = document.getElementById('noteBuy');
+  const noteSell = document.getElementById('noteSell');
+
+  if (currentCurrency === 'USD') {
+    noteBuy.textContent  = (!isNaN(buy)  && buy  > 0) ? '≈ ฿' + fmtComma(buy  * usdRate) + ' บาท/หน่วย' : '';
+    noteSell.textContent = (!isNaN(sell) && sell > 0) ? '≈ ฿' + fmtComma(sell * usdRate) + ' บาท/หน่วย' : '';
+  } else {
+    noteBuy.textContent  = (!isNaN(buy)  && buy  > 0) ? '≈ $' + (buy  / usdRate).toFixed(4) + ' USD/หน่วย' : '';
+    noteSell.textContent = (!isNaN(sell) && sell > 0) ? '≈ $' + (sell / usdRate).toFixed(4) + ' USD/หน่วย' : '';
+  }
+}
+
 function fmt(n, d = 2) { return parseFloat(n).toFixed(d); }
 function fmtComma(n) { return parseFloat(n).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
@@ -438,7 +637,7 @@ function feeTable(fees, commRate, side) {
     <div class="${colorClass}">
       <div class="fee-side">${side === 'ซื้อ' ? '▲ ' : '▼ '}ฝั่ง${side}</div>
       <table class="fee-table">
-        <tr><th>รายการ</th><th>จำนวน</th></tr>
+        <tr><th>รายการ</th><th>จำนวน (฿)</th></tr>
         <tr><td class="fee-label">ค่าคอม (${commRate}%)</td><td>${fmt(fees.comm, 4)}</td></tr>
         <tr><td class="fee-label">SET Fee (0.005%)</td><td>${fmt(fees.setF, 4)}</td></tr>
         <tr><td class="fee-label">Clearing (0.001%)</td><td>${fmt(fees.clrF, 4)}</td></tr>
@@ -450,11 +649,24 @@ function feeTable(fees, commRate, side) {
 }
 
 function calculate() {
-  const buy      = parseFloat(document.getElementById('buyPrice').value) || 4.70;
-  const sell     = parseFloat(document.getElementById('sellPrice').value) || 4.80;
-  const qty      = parseInt(document.getElementById('qty').value) || 120;
-  const commRate = parseFloat(document.getElementById('acctType').value);
   const usdRate  = parseFloat(document.getElementById('usdRate').value) || 34;
+  const commRate = parseFloat(document.getElementById('acctType').value);
+
+  let buyRaw  = parseFloat(document.getElementById('buyPrice').value);
+  let sellRaw = parseFloat(document.getElementById('sellPrice').value);
+  const qty   = parseInt(document.getElementById('qty').value) || 1;
+
+  // Convert to THB if input is in USD
+  let buy, sell;
+  if (currentCurrency === 'USD') {
+    buy  = (buyRaw  || 0) * usdRate;
+    sell = (sellRaw || 0) * usdRate;
+  } else {
+    buy  = buyRaw  || 0;
+    sell = sellRaw || 0;
+  }
+
+  if (!buy || !sell || !qty) { alert('กรุณากรอกข้อมูลให้ครบถ้วน'); return; }
 
   const buyVal   = buy * qty;
   const sellVal  = sell * qty;
@@ -470,30 +682,68 @@ function calculate() {
   const cls           = isProfit ? 'profit' : 'loss';
   const label         = isProfit ? 'กำไรสุทธิ' : 'ขาดทุนสุทธิ';
 
-  const profitUSD     = profit / usdRate;
+  const profitUSD = profit / usdRate;
+
   const fmtUSD = (n) => {
     const abs = Math.abs(n);
-    const sign = n >= 0 ? '+' : '-';
-    return sign + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+    const s   = n >= 0 ? '+' : '-';
+    return s + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
   };
 
   document.getElementById('result').style.display = 'block';
 
-  document.getElementById('heroInner').innerHTML = `
-    <div class="result-tag">${label}</div>
-    <div class="result-amount ${cls}">${sign}${fmtComma(profit)} บ.</div>
-    <div class="usd-line ${cls}">
-      <span class="usd-badge">USD</span>${fmtUSD(profitUSD)}
-    </div>
-    <div class="rate-note">@ 1 USD = ${fmt(usdRate, 2)} THB</div>
-    <div class="result-pct ${cls}">${sign}${fmt(profitPct, 3)}% จากต้นทุน</div>
-  `;
+  // If user entered in USD → primary display is USD, secondary is THB
+  // If user entered in THB → primary display is THB, secondary is USD
+  const primaryIsUSD = currentCurrency === 'USD';
+
+  let heroHTML;
+  if (primaryIsUSD) {
+    // Primary: USD, Secondary: THB
+    heroHTML = `
+      <div class="result-tag">${label}</div>
+      <div class="result-amount">${fmtUSD(profitUSD)}</div>
+      <div class="thb-line ${cls}">
+        <span class="thb-badge">THB</span>${sign}${fmtComma(profit)} บ.
+      </div>
+      <div class="rate-note">@ 1 USD = ${fmt(usdRate, 2)} THB</div>
+      <div class="result-pct ${cls}">${sign}${fmt(profitPct, 3)}% จากต้นทุน</div>
+    `;
+  } else {
+    // Primary: THB, Secondary: USD
+    heroHTML = `
+      <div class="result-tag">${label}</div>
+      <div class="result-amount">${sign}${fmtComma(profit)} บ.</div>
+      <div class="usd-line ${cls}">
+        <span class="usd-badge">USD</span>${fmtUSD(profitUSD)}
+      </div>
+      <div class="rate-note">@ 1 USD = ${fmt(usdRate, 2)} THB</div>
+      <div class="result-pct ${cls}">${sign}${fmt(profitPct, 3)}% จากต้นทุน</div>
+    `;
+  }
+
+  document.getElementById('heroInner').className = `result-hero ${cls}`;
+  document.getElementById('heroInner').innerHTML = heroHTML;
   document.getElementById('heroCard').className = 'card anim';
 
+  // Stats row — show both THB and USD
+  const buyValUSD  = buyVal  / usdRate;
+  const sellValUSD = sellVal / usdRate;
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat"><div class="stat-lbl">มูลค่าซื้อ</div><div class="stat-val">${fmtComma(buyVal)}</div></div>
-    <div class="stat"><div class="stat-lbl">มูลค่าขาย</div><div class="stat-val">${fmtComma(sellVal)}</div></div>
-    <div class="stat"><div class="stat-lbl">ส่วนต่างดิบ</div><div class="stat-val">${sign}${fmtComma(sellVal - buyVal)}</div></div>
+    <div class="stat">
+      <div class="stat-lbl">มูลค่าซื้อ</div>
+      <div class="stat-val">${fmtComma(buyVal)} ฿</div>
+      <div class="stat-sub">$${buyValUSD.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">มูลค่าขาย</div>
+      <div class="stat-val">${fmtComma(sellVal)} ฿</div>
+      <div class="stat-sub">$${sellValUSD.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">ส่วนต่างดิบ</div>
+      <div class="stat-val">${sign}${fmtComma(sellVal - buyVal)} ฿</div>
+      <div class="stat-sub">${fmtUSD((sellVal-buyVal)/usdRate)}</div>
+    </div>
   `;
 
   document.getElementById('feeCols').innerHTML =
@@ -502,11 +752,17 @@ function calculate() {
 
   const totalFees = buyFees.total + sellFees.total;
   document.getElementById('summaryRows').innerHTML = `
-    <div class="summary-row"><span class="key">ต้นทุนรวม (ซื้อ + ค่าฟี)</span><span class="val">${fmtComma(totalCost)} บ.</span></div>
-    <div class="summary-row"><span class="key">รับสุทธิ (ขาย − ค่าฟี)</span><span class="val">${fmtComma(totalReceived)} บ.</span></div>
-    <div class="summary-row"><span class="key">ค่าธรรมเนียมรวมทั้งหมด</span><span class="val">${fmt(totalFees, 4)} บ.</span></div>
-    <div class="summary-row"><span class="key" style="font-weight:500;color:var(--text)">${label} (THB)</span><span class="val" style="color:${isProfit ? 'var(--accent)' : 'var(--red)'}">${sign}${fmtComma(profit)} บ.</span></div>
-    <div class="summary-row"><span class="key" style="font-weight:500;color:var(--text)">${label} (USD)</span><span class="val" style="color:${isProfit ? 'var(--accent)' : 'var(--red)'}">${fmtUSD(profitUSD)}</span></div>
+    <div class="summary-row"><span class="key">ต้นทุนรวม (ซื้อ + ค่าฟี)</span><span class="val">${fmtComma(totalCost)} ฿ &nbsp;<small style="color:var(--muted)">/ $${(totalCost/usdRate).toFixed(2)}</small></span></div>
+    <div class="summary-row"><span class="key">รับสุทธิ (ขาย − ค่าฟี)</span><span class="val">${fmtComma(totalReceived)} ฿ &nbsp;<small style="color:var(--muted)">/ $${(totalReceived/usdRate).toFixed(2)}</small></span></div>
+    <div class="summary-row"><span class="key">ค่าธรรมเนียมรวมทั้งหมด</span><span class="val">${fmt(totalFees, 4)} ฿</span></div>
+    <div class="summary-row">
+      <span class="key" style="font-weight:500;color:var(--text)">${label} (THB)</span>
+      <span class="val" style="color:${isProfit ? 'var(--accent)' : 'var(--red)'}">${sign}${fmtComma(profit)} บ.</span>
+    </div>
+    <div class="summary-row">
+      <span class="key" style="font-weight:500;color:var(--text)">${label} (USD)</span>
+      <span class="val" style="color:${isProfit ? 'var(--accent)' : 'var(--red)'}">${fmtUSD(profitUSD)}</span>
+    </div>
     <div class="summary-row"><span class="key">อัตราแลกเปลี่ยนที่ใช้</span><span class="val">1 USD = ${fmt(usdRate, 2)} THB</span></div>
   `;
 
