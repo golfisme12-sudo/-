@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เปรียบเทียบเงินปันผล</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Noto+Sans+Thai:wght@300;400;500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#fdfaf5;
+  --paper:#fffefb;
+  --surface:#f7f3eb;
+  --surface2:#f0ebe0;
+  --ink:#1c1810;
+  --ink2:#4a4030;
+  --ink3:#8a7a60;
+  --ink4:#b8a888;
+  --border:#e0d8c8;
+  --border2:#ccc0a8;
+  --gold:#c8860a;
+  --gold-light:#fef7e6;
+  --gold-border:#f0d080;
+  --green:#1a6b3a;
+  --green-light:#edf7f1;
+  --green-border:#a8d8bc;
+  --red:#8b2020;
+  --red-light:#fdf0f0;
+  --mono:'JetBrains Mono',monospace;
+  --display:'Playfair Display',serif;
+  --sans:'Noto Sans Thai',sans-serif;
+  --shadow:0 2px 8px rgba(0,0,0,0.06),0 8px 32px rgba(0,0,0,0.04);
+}
+
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  min-height:100vh;
+  padding:2.5rem 1rem 5rem;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200,134,10,0.06) 0%, transparent 60%),
+    repeating-linear-gradient(0deg,transparent,transparent 47px,rgba(0,0,0,0.025) 47px,rgba(0,0,0,0.025) 48px),
+    repeating-linear-gradient(90deg,transparent,transparent 47px,rgba(0,0,0,0.015) 47px,rgba(0,0,0,0.015) 48px);
+}
+
+.wrap{max-width:1060px;margin:0 auto;}
+
+/* ── Header ── */
+.hdr{
+  text-align:center;
+  margin-bottom:3rem;
+  position:relative;
+}
+.hdr::after{
+  content:'';
+  display:block;
+  width:60px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  margin:1.5rem auto 0;
+}
+.hdr-eyebrow{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.3em;
+  color:var(--gold);
+  text-transform:uppercase;
+  margin-bottom:0.75rem;
+}
+.hdr h1{
+  font-family:var(--display);
+  font-size:clamp(2rem,5vw,3.2rem);
+  font-weight:700;
+  color:var(--ink);
+  line-height:1.1;
+}
+.hdr h1 em{color:var(--gold);font-style:normal;}
+.hdr-sub{
+  font-size:13px;
+  color:var(--ink3);
+  margin-top:0.6rem;
+  font-weight:300;
+}
+
+/* ── Settings bar ── */
+.settings-bar{
+  background:var(--paper);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:1rem 1.25rem;
+  display:flex;flex-wrap:wrap;gap:1.25rem;align-items:center;
+  margin-bottom:1.5rem;
+  box-shadow:var(--shadow);
+}
+.sbar-label{
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:0.15em;
+  color:var(--ink3);
+  text-transform:uppercase;
+  margin-bottom:3px;
+}
+.sbar-field{display:flex;flex-direction:column;gap:2px;}
+.sbar-field input,.sbar-field select{
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:4px;
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:13px;
+  padding:5px 9px;
+  outline:none;
+  width:130px;
+  transition:border-color 0.15s;
+  -moz-appearance:textfield;appearance:textfield;
+}
+.sbar-field input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.sbar-field input:focus,.sbar-field select:focus{border-color:var(--gold);}
+
+.sbar-actions{margin-left:auto;display:flex;gap:0.75rem;align-items:flex-end;}
+
+.btn-add{
+  display:flex;align-items:center;gap:5px;
+  background:var(--gold-light);
+  border:1px solid var(--gold-border);
+  border-radius:4px;
+  color:var(--gold);
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:0.1em;
+  padding:6px 14px;
+  cursor:pointer;
+  transition:all 0.15s;
+  text-transform:uppercase;
+  height:32px;
+}
+.btn-add:hover{background:#fef0c0;border-color:var(--gold);}
+
+.btn-calc{
+  background:var(--ink);
+  border:none;
+  border-radius:4px;
+  color:var(--paper);
+  font-family:var(--mono);
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:0.12em;
+  padding:6px 20px;
+  cursor:pointer;
+  transition:all 0.18s;
+  text-transform:uppercase;
+  height:32px;
+}
+.btn-calc:hover{background:#3a3020;}
+.btn-calc:active{transform:scale(0.98);}
+
+/* ── Cards ── */
+.cards-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:1rem;
+  margin-bottom:1.5rem;
+}
+
+.stock-card{
+  background:var(--paper);
+  border:1px solid var(--border);
+  border-radius:6px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  animation:cardIn 0.22s ease;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.stock-card:hover{border-color:var(--border2);box-shadow:0 4px 16px rgba(0,0,0,0.08);}
+.stock-card.best{border-color:var(--gold-border);box-shadow:0 2px 8px rgba(200,134,10,0.12);}
+
+.card-top{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0.7rem 1rem;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ticker-wrap{display:flex;align-items:center;gap:8px;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ticker-input{
+  background:transparent;
+  border:none;
+  border-bottom:1px dashed var(--border2);
+  color:var(--ink);
+  font-family:var(--display);
+  font-size:16px;
+  font-weight:600;
+  width:100px;
+  outline:none;
+  padding:1px 0;
+  transition:border-color 0.15s;
+}
+.ticker-input:focus{border-bottom-color:var(--gold);}
+.ticker-input::placeholder{color:var(--ink4);font-style:italic;}
+
+.card-actions{display:flex;align-items:center;gap:6px;}
+.best-badge{
+  font-family:var(--mono);
+  font-size:8px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  background:var(--gold-light);
+  color:var(--gold);
+  border:1px solid var(--gold-border);
+  border-radius:2px;
+  padding:2px 6px;
+  display:none;
+}
+.del-btn{
+  background:none;border:none;
+  color:var(--ink4);cursor:pointer;
+  font-size:16px;line-height:1;
+  transition:color 0.15s;padding:1px 3px;
+}
+.del-btn:hover{color:var(--red);}
+
+.card-body{padding:1rem;}
+
+.irow{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.6rem;}
+.ifield{display:flex;flex-direction:column;gap:3px;}
+.ifield label{
+  font-family:var(--mono);
+  font-size:8.5px;
+  letter-spacing:0.12em;
+  color:var(--ink3);
+  text-transform:uppercase;
+}
+.ifield input{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:3px;
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:14px;
+  font-weight:500;
+  padding:5px 7px;
+  width:100%;
+  outline:none;
+  transition:border-color 0.15s,background 0.15s;
+  -moz-appearance:textfield;appearance:textfield;
+}
+.ifield input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.ifield input:focus{border-color:var(--gold);background:var(--paper);}
+.ifield input::placeholder{color:var(--ink4);}
+
+/* Dividend rows */
+.div-section-label{
+  font-family:var(--mono);
+  font-size:8.5px;
+  letter-spacing:0.12em;
+  color:var(--gold);
+  text-transform:uppercase;
+  margin:0.7rem 0 0.45rem;
+  display:flex;align-items:center;gap:6px;
+}
+.div-section-label::after{content:'';flex:1;height:1px;background:var(--gold-border);}
+
+.div-rows{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.5rem;}
+.div-row{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:0.5rem;
+  align-items:end;
+  background:var(--gold-light);
+  border:1px solid var(--gold-border);
+  border-radius:4px;
+  padding:0.5rem 0.6rem;
+  position:relative;
+  animation:cardIn 0.18s ease;
+}
+.div-row .ifield input{background:rgba(255,255,255,0.6);}
+.div-del{
+  background:none;border:none;
+  color:var(--ink4);cursor:pointer;
+  font-size:14px;align-self:flex-end;
+  margin-bottom:1px;opacity:0.5;
+  transition:opacity 0.15s,color 0.15s;
+}
+.div-del:hover{opacity:1;color:var(--red);}
+
+.btn-add-div{
+  width:100%;
+  padding:5px;
+  border:1px dashed var(--gold-border);
+  border-radius:3px;
+  background:transparent;
+  color:var(--gold);
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.08em;
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.btn-add-div:hover{background:var(--gold-light);}
+
+/* Card result */
+.card-result{display:none;margin-top:0.75rem;}
+.card-result.show{display:block;animation:fadeIn 0.2s ease;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+.res-hero{
+  text-align:center;
+  padding:0.9rem 0.5rem 0.7rem;
+  border-radius:5px;
+  margin-bottom:0.7rem;
+  background:var(--green-light);
+  border:1px solid var(--green-border);
+}
+.res-hero-label{
+  font-family:var(--mono);
+  font-size:8.5px;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--green);
+  margin-bottom:3px;
+}
+.res-hero-val{
+  font-family:var(--display);
+  font-size:2rem;
+  font-weight:700;
+  color:var(--green);
+  line-height:1;
+}
+.res-hero-sub{font-size:11px;color:var(--green);margin-top:3px;font-family:var(--mono);}
+
+.res-table{width:100%;border-collapse:collapse;}
+.res-table td{
+  font-size:12px;
+  padding:3px 0;
+  border-bottom:1px solid var(--border);
+  vertical-align:middle;
+}
+.res-table tr:last-child td{border-bottom:none;}
+.res-table td:first-child{color:var(--ink3);font-weight:300;}
+.res-table td:last-child{text-align:right;font-family:var(--mono);font-size:12px;font-weight:500;}
+.pos{color:var(--green);}
+.neg{color:var(--red);}
+.gld{color:var(--gold);}
+
+/* ── Comparison table ── */
+#compare{display:none;margin-top:1.5rem;}
+#compare.show{display:block;animation:fadeIn 0.3s ease;}
+
+.section-title{
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--ink3);
+  margin-bottom:0.75rem;
+  display:flex;align-items:center;gap:10px;
+}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.cmp-table{
+  width:100%;
+  border-collapse:collapse;
+  background:var(--paper);
+  border:1px solid var(--border);
+  border-radius:6px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.cmp-table th{
+  background:var(--surface2);
+  font-family:var(--mono);
+  font-size:8.5px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--ink3);
+  padding:8px 12px;
+  text-align:right;
+  border-bottom:1px solid var(--border2);
+  white-space:nowrap;
+}
+.cmp-table th:first-child{text-align:left;}
+.cmp-table td{
+  padding:9px 12px;
+  font-size:13px;
+  text-align:right;
+  border-bottom:1px solid var(--border);
+  vertical-align:middle;
+}
+.cmp-table td:first-child{text-align:left;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table tr:hover td{background:rgba(0,0,0,0.015);}
+.cmp-table .best-row td{background:var(--gold-light);}
+
+.yield-bar{
+  display:flex;align-items:center;gap:6px;justify-content:flex-end;
+}
+.ybar{
+  height:6px;border-radius:3px;
+  background:var(--gold);
+  min-width:2px;
+}
+
+/* ── Empty ── */
+.empty-state{
+  grid-column:1/-1;
+  text-align:center;
+  padding:3rem;
+  border:1px dashed var(--border2);
+  border-radius:6px;
+  color:var(--ink4);
+  font-size:13px;
+  font-weight:300;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-eyebrow">Dividend Income Analysis</div>
+    <h1>เปรียบเทียบ<em>เงินปันผล</em><br>หลายหุ้นพร้อมกัน</h1>
+    <p class="hdr-sub">คำนวณ Dividend Yield · รายได้ปันผลรวม · ระยะคืนทุน</p>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings-bar">
+    <div class="sbar-field">
+      <div class="sbar-label">ภาษีหัก ณ ที่จ่าย (%)</div>
+      <input type="number" id="taxRate" value="10" step="0.5" min="0" max="100" placeholder="10">
+    </div>
+    <div class="sbar-field">
+      <div class="sbar-label">งบลงทุนรวม (บาท)</div>
+      <input type="number" id="totalBudget" step="1000" min="0" placeholder="ไม่บังคับ">
+    </div>
+    <div class="sbar-actions">
+      <button class="btn-add" onclick="addCard()">+ เพิ่มหุ้น</button>
+      <button class="btn-calc" onclick="calculateAll()">CALCULATE</button>
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards-grid" id="cards-grid"></div>
+
+  <!-- Comparison -->
+  <div id="compare">
+    <div class="section-title">ตารางเปรียบเทียบ</div>
+    <div style="overflow-x:auto;">
+      <table class="cmp-table" id="cmp-table"></table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const COLORS=['#c8860a','#1a6b3a','#2860c4','#8b2020','#5a3a9a','#1a7a7a','#8b5a10','#4a6a1a'];
+let cards=[];
+let cid=0;
+let divCounter={};
+
+function fmtComma(n,d=2){
+  if(isNaN(n)||!isFinite(n)) return '—';
+  return parseFloat(n).toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+function fmt(n,d=2){return (isNaN(n)||!isFinite(n))?'—':parseFloat(n).toFixed(d);}
+function getVal(id){return parseFloat(document.getElementById(id)?.value)||0;}
+function getStr(id){return (document.getElementById(id)?.value||'').trim();}
+
+function addCard(){
+  const id=++cid;
+  divCounter[id]=0;
+  cards.push({id,color:COLORS[(cards.length)%COLORS.length],divRows:[]});
+  renderCards();
+  // add one div row automatically
+  addDivRow(id);
+  setTimeout(()=>{
+    document.getElementById('tk-'+id)?.focus();
+  },60);
+}
+
+function removeCard(id){
+  cards=cards.filter(c=>c.id!==id);
+  renderCards();
+  clearCompare();
+}
+
+function addDivRow(cid){
+  const card=cards.find(c=>c.id===cid);
+  if(!card) return;
+  const did=++divCounter[cid];
+  card.divRows.push(did);
+  renderDivRows(cid);
+}
+
+function removeDivRow(cid,did){
+  const card=cards.find(c=>c.id===cid);
+  if(!card) return;
+  card.divRows=card.divRows.filter(d=>d!==did);
+  renderDivRows(cid);
+}
+
+function renderDivRows(cid){
+  const card=cards.find(c=>c.id===cid);
+  if(!card) return;
+  const container=document.getElementById('divrows-'+cid);
+  if(!container) return;
+  container.innerHTML='';
+  card.divRows.forEach(did=>{
+    const row=document.createElement('div');
+    row.className='div-row';
+    row.innerHTML=`
+      <div class="ifield">
+        <label>เงินปันผล/หุ้น (บาท)</label>
+        <input type="number" id="dv-${cid}-${did}" step="0.0001" min="0" placeholder="0.00">
+      </div>
+      <div class="ifield">
+        <label>ครั้งต่อปี</label>
+        <input type="number" id="df-${cid}-${did}" step="1" min="1" value="1" placeholder="1">
+      </div>
+      <button class="div-del" onclick="removeDivRow(${cid},${did})">×</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function renderCards(){
+  const grid=document.getElementById('cards-grid');
+  grid.innerHTML='';
+  if(cards.length===0){
+    grid.innerHTML=`<div class="empty-state">กด "+ เพิ่มหุ้น" เพื่อเริ่มต้น</div>`;
+    return;
+  }
+  cards.forEach(c=>{
+    const el=document.createElement('div');
+    el.className='stock-card';
+    el.id='card-'+c.id;
+    el.innerHTML=`
+      <div class="card-top">
+        <div class="ticker-wrap">
+          <div class="dot" style="background:${c.color}"></div>
+          <input class="ticker-input" id="tk-${c.id}" placeholder="ชื่อหุ้น" maxlength="12">
+        </div>
+        <div class="card-actions">
+          <span class="best-badge" id="best-${c.id}">★ ดีสุด</span>
+          <button class="del-btn" onclick="removeCard(${c.id})">×</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="irow">
+          <div class="ifield">
+            <label>ราคาซื้อเฉลี่ย (บาท/หุ้น)</label>
+            <input type="number" id="bp-${c.id}" step="0.0001" min="0" placeholder="0.00">
+          </div>
+          <div class="ifield">
+            <label>จำนวนหุ้นที่ถือ</label>
+            <input type="number" id="sh-${c.id}" step="1" min="1" placeholder="0">
+          </div>
+        </div>
+
+        <div class="div-section-label">รายการเงินปันผล</div>
+        <div class="div-rows" id="divrows-${c.id}"></div>
+        <button class="btn-add-div" onclick="addDivRow(${c.id})">+ เพิ่มรอบปันผล</button>
+
+        <div class="card-result" id="result-${c.id}"></div>
+      </div>
+    `;
+    grid.appendChild(el);
+    // re-render div rows
+    renderDivRows(c.id);
+  });
+}
+
+function calcCard(c){
+  const ticker = getStr('tk-'+c.id) || ('หุ้น'+c.id);
+  const buyP   = getVal('bp-'+c.id);
+  const shares = getVal('sh-'+c.id);
+  const taxRate= getVal('taxRate');
+
+  if(!buyP || !shares) return null;
+
+  const totalCost = buyP * shares;
+
+  // Collect dividend rounds
+  let annualDivPerShare=0;
+  let divRounds=[];
+  c.divRows.forEach(did=>{
+    const dv=getVal(`dv-${c.id}-${did}`);
+    const df=getVal(`df-${c.id}-${did}`)||1;
+    if(dv>0){
+      const annualPerShare = dv * df;
+      annualDivPerShare += annualPerShare;
+      divRounds.push({dv,df,annualPerShare});
+    }
+  });
+
+  if(annualDivPerShare===0) return null;
+
+  const taxMult       = 1 - taxRate/100;
+  const annualDivGross= annualDivPerShare * shares;
+  const annualDivNet  = annualDivGross * taxMult;
+  const taxAmount     = annualDivGross - annualDivNet;
+  const yieldGross    = (annualDivPerShare / buyP) * 100;
+  const yieldNet      = (annualDivPerShare * taxMult / buyP) * 100;
+  const payback       = annualDivNet > 0 ? totalCost / annualDivNet : Infinity;
+  const divPerShare   = annualDivPerShare * taxMult; // net per share per year
+
+  return {ticker,buyP,shares,totalCost,annualDivPerShare,annualDivGross,
+          annualDivNet,taxAmount,yieldGross,yieldNet,payback,divPerShare,
+          divRounds,taxRate,color:c.color,id:c.id};
+}
+
+function calculateAll(){
+  const results=[];
+  cards.forEach(c=>{
+    const r=calcCard(c);
+    if(r) results.push(r);
+  });
+  if(results.length===0) return;
+
+  // rank by net yield
+  const sorted=[...results].sort((a,b)=>b.yieldNet-a.yieldNet);
+  const maxYield=sorted[0]?.yieldNet||1;
+
+  // Clear all best badges
+  cards.forEach(c=>{
+    const b=document.getElementById('best-'+c.id);
+    if(b) b.style.display='none';
+    const card=document.getElementById('card-'+c.id);
+    if(card) card.classList.remove('best');
+  });
+
+  results.forEach(r=>{
+    renderCardResult(r);
+  });
+
+  // mark best
+  if(sorted.length>0){
+    const best=sorted[0];
+    const b=document.getElementById('best-'+best.id);
+    if(b) b.style.display='';
+    const card=document.getElementById('card-'+best.id);
+    if(card) card.classList.add('best');
+  }
+
+  renderCompare(sorted,maxYield);
+}
+
+function renderCardResult(r){
+  const el=document.getElementById('result-'+r.id);
+  if(!el) return;
+
+  let html=`
+    <div class="res-hero">
+      <div class="res-hero-label">รายได้ปันผลสุทธิต่อปี</div>
+      <div class="res-hero-val">${fmtComma(r.annualDivNet)}</div>
+      <div class="res-hero-sub">บาท · Yield ${fmt(r.yieldNet,2)}% (หลังภาษี)</div>
+    </div>
+    <table class="res-table">
+      <tr><td>ราคาซื้อเฉลี่ย</td><td>${fmtComma(r.buyP,4)} บ./หุ้น</td></tr>
+      <tr><td>จำนวนหุ้น</td><td>${fmtComma(r.shares,0)} หุ้น</td></tr>
+      <tr><td>เงินลงทุนรวม</td><td>${fmtComma(r.totalCost)} บ.</td></tr>`;
+
+  r.divRounds.forEach((d,i)=>{
+    html+=`<tr><td style="color:var(--gold);">ปันผลรอบที่ ${i+1} (×${d.df}/ปี)</td><td class="gld">${fmtComma(d.dv,4)} บ./หุ้น</td></tr>`;
+  });
+
+  html+=`
+      <tr><td>ปันผลรวม/หุ้น/ปี (ก่อนภาษี)</td><td class="gld">${fmtComma(r.annualDivPerShare,4)} บ.</td></tr>
+      <tr><td>รายได้ปันผลรวม (ก่อนภาษี)</td><td>${fmtComma(r.annualDivGross)} บ.</td></tr>
+      <tr><td>ภาษีหัก ณ ที่จ่าย (${r.taxRate}%)</td><td class="neg">−${fmtComma(r.taxAmount)} บ.</td></tr>
+      <tr><td>รายได้ปันผลสุทธิ/ปี</td><td class="pos">${fmtComma(r.annualDivNet)} บ.</td></tr>
+      <tr><td>Dividend Yield (ก่อนภาษี)</td><td class="gld">${fmt(r.yieldGross,2)}%</td></tr>
+      <tr><td>Dividend Yield (หลังภาษี)</td><td class="pos">${fmt(r.yieldNet,2)}%</td></tr>
+      <tr><td>ระยะคืนทุน</td><td>${isFinite(r.payback)?fmt(r.payback,1)+' ปี':'—'}</td></tr>
+    </table>`;
+
+  el.innerHTML=html;
+  el.className='card-result show';
+}
+
+function renderCompare(sorted,maxYield){
+  const budget=getVal('totalBudget');
+
+  let html=`<thead><tr>
+    <th>หุ้น</th>
+    <th>ราคาซื้อ</th>
+    <th>จำนวนหุ้น</th>
+    <th>เงินลงทุน</th>
+    <th>ปันผล/หุ้น/ปี</th>
+    <th>รายได้/ปี (สุทธิ)</th>
+    <th>Yield ก่อนภาษี</th>
+    <th>Yield หลังภาษี</th>
+    <th>คืนทุนใน</th>`;
+  if(budget>0) html+=`<th>ถ้าลงทุน ${fmtComma(budget)} บ.</th>`;
+  html+=`</tr></thead><tbody>`;
+
+  sorted.forEach((r,i)=>{
+    const isBest=i===0;
+    const barW=Math.round((r.yieldNet/maxYield)*80);
+    const projectedIncome=budget>0?(budget/r.buyP)*r.annualDivPerShare*(1-r.taxRate/100):null;
+
+    html+=`<tr class="${isBest?'best-row':''}">
+      <td>
+        <span style="display:inline-flex;align-items:center;gap:6px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${r.color};flex-shrink:0;"></span>
+          <strong>${r.ticker}</strong>
+          ${isBest?`<span style="font-size:9px;background:var(--gold-light);color:var(--gold);border:1px solid var(--gold-border);border-radius:2px;padding:1px 5px;font-family:var(--mono);letter-spacing:0.08em;">★ BEST</span>`:''}
+        </span>
+      </td>
+      <td>${fmtComma(r.buyP,4)}</td>
+      <td>${fmtComma(r.shares,0)}</td>
+      <td>${fmtComma(r.totalCost)}</td>
+      <td class="gld">${fmtComma(r.annualDivPerShare,4)}</td>
+      <td class="pos">${fmtComma(r.annualDivNet)}</td>
+      <td class="gld">${fmt(r.yieldGross,2)}%</td>
+      <td>
+        <div class="yield-bar">
+          <strong class="pos">${fmt(r.yieldNet,2)}%</strong>
+          <div class="ybar" style="width:${barW}px"></div>
+        </div>
+      </td>
+      <td>${isFinite(r.payback)?fmt(r.payback,1)+' ปี':'—'}</td>`;
+    if(budget>0) html+=`<td class="pos">${projectedIncome!==null?fmtComma(projectedIncome)+' บ./ปี':'—'}</td>`;
+    html+=`</tr>`;
+  });
+
+  html+=`</tbody>`;
+  document.getElementById('cmp-table').innerHTML=html;
+  document.getElementById('compare').className='show';
+  setTimeout(()=>document.getElementById('compare').scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+
+function clearCompare(){
+  document.getElementById('compare').className='';
+}
+
+// Init
+addCard(); addCard(); addCard();
+</script>
+</body>
+</html>
