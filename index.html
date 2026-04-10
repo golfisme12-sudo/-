@@ -312,6 +312,40 @@
     to { opacity: 1; transform: translateY(0); }
   }
   .anim { animation: fadeUp 0.35s ease forwards; }
+
+  /* USD conversion */
+  .usd-line {
+    font-family: var(--mono);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-top: 0.4rem;
+    letter-spacing: -0.01em;
+    opacity: 0.75;
+  }
+  .usd-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+    border: 1px solid;
+    text-transform: uppercase;
+  }
+  .profit .usd-badge { color: var(--accent); border-color: var(--accent-dim); background: var(--accent-glow); }
+  .loss   .usd-badge { color: var(--red);    border-color: rgba(248,113,113,0.4); background: var(--red-dim); }
+  .profit .usd-line  { color: var(--accent); }
+  .loss   .usd-line  { color: var(--red); }
+
+  .rate-note {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-top: 0.3rem;
+  }
 </style>
 </head>
 <body>
@@ -345,6 +379,10 @@
           <option value="0.20">Cash Account · 0.20%</option>
           <option value="0.25">ผ่านเจ้าหน้าที่ · 0.25%</option>
         </select>
+      </div>
+      <div class="field acct-span" style="margin-top:0.25rem;">
+        <label>อัตราแลกเปลี่ยน (1 USD = ? บาท)</label>
+        <input type="number" id="usdRate" value="34" step="0.01" min="0.01" placeholder="34.00">
       </div>
     </div>
     <button class="calc-btn" onclick="calculate()">CALCULATE</button>
@@ -413,6 +451,7 @@ function calculate() {
   const sell     = parseFloat(document.getElementById('sellPrice').value) || 4.80;
   const qty      = parseInt(document.getElementById('qty').value) || 120;
   const commRate = parseFloat(document.getElementById('acctType').value);
+  const usdRate  = parseFloat(document.getElementById('usdRate').value) || 34;
 
   const buyVal   = buy * qty;
   const sellVal  = sell * qty;
@@ -428,11 +467,22 @@ function calculate() {
   const cls           = isProfit ? 'profit' : 'loss';
   const label         = isProfit ? 'กำไรสุทธิ' : 'ขาดทุนสุทธิ';
 
+  const profitUSD     = profit / usdRate;
+  const fmtUSD = (n) => {
+    const abs = Math.abs(n);
+    const sign = n >= 0 ? '+' : '-';
+    return sign + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  };
+
   document.getElementById('result').style.display = 'block';
 
   document.getElementById('heroInner').innerHTML = `
     <div class="result-tag">${label}</div>
-    <div class="result-amount ${cls}">${sign}${fmtComma(profit)}</div>
+    <div class="result-amount ${cls}">${sign}${fmtComma(profit)} บ.</div>
+    <div class="usd-line ${cls}">
+      <span class="usd-badge">USD</span>${fmtUSD(profitUSD)}
+    </div>
+    <div class="rate-note">@ 1 USD = ${fmt(usdRate, 2)} THB</div>
     <div class="result-pct ${cls}">${sign}${fmt(profitPct, 3)}% จากต้นทุน</div>
   `;
   document.getElementById('heroCard').className = 'card anim';
@@ -452,7 +502,9 @@ function calculate() {
     <div class="summary-row"><span class="key">ต้นทุนรวม (ซื้อ + ค่าฟี)</span><span class="val">${fmtComma(totalCost)} บ.</span></div>
     <div class="summary-row"><span class="key">รับสุทธิ (ขาย − ค่าฟี)</span><span class="val">${fmtComma(totalReceived)} บ.</span></div>
     <div class="summary-row"><span class="key">ค่าธรรมเนียมรวมทั้งหมด</span><span class="val">${fmt(totalFees, 4)} บ.</span></div>
-    <div class="summary-row"><span class="key" style="font-weight:500;color:var(--text)">${label}</span><span class="val" style="color:${isProfit ? 'var(--accent)' : 'var(--red)'}">${sign}${fmtComma(profit)} บ.</span></div>
+    <div class="summary-row"><span class="key" style="font-weight:500;color:var(--text)">${label} (THB)</span><span class="val" style="color:${isProfit ? 'var(--accent)' : 'var(--red)'}">${sign}${fmtComma(profit)} บ.</span></div>
+    <div class="summary-row"><span class="key" style="font-weight:500;color:var(--text)">${label} (USD)</span><span class="val" style="color:${isProfit ? 'var(--accent)' : 'var(--red)'}">${fmtUSD(profitUSD)}</span></div>
+    <div class="summary-row"><span class="key">อัตราแลกเปลี่ยนที่ใช้</span><span class="val">1 USD = ${fmt(usdRate, 2)} THB</span></div>
   `;
 
   setTimeout(() => {
